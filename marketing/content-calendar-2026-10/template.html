@@ -1,0 +1,707 @@
+<title>Noyau Content Calendar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: a calm editorial document. One column of running text, a full-width month grid, hairline rules between sections, no cards except the post chips and the drawer. */
+:root {
+  --bg: #F1EDE4; --bg-2: #EAE5D9; --band: #E4D7C4; --chip: #FAF8F3;
+  --fg: #333333; --head: #2F4432; --muted: #6F6F65; --rule: #DADACF;
+  --olive: #B1B17F; --olive-deep: #7D7D55; --dark: #2F4432; --on-dark: #F1EDE4; --on-dark-dim: #C2C7B6;
+  --focus: #2F4432; --today: #B1B17F; --launch: #2F4432;
+  --pil-ritual: #9A9A63; --pil-pieces: #2F4432; --pil-method: #A8763F; --pil-materials: #6B7C88; --pil-community: #A87A73; --pil-house: #6F6F65;
+  --st-planned: #C9C4B6; --st-drafted: #B08A5A; --st-scheduled: #7A8A94; --st-published: #2F4432;
+  --display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1A231C; --bg-2: #202B22; --band: #263329; --chip: #263329;
+    --fg: #E6E1D6; --head: #F1EDE4; --muted: #A9AE9E; --rule: #35443A;
+    --olive: #B9B98A; --olive-deep: #D3D3A6; --dark: #0F1611; --on-dark: #F1EDE4; --on-dark-dim: #B7BBA8;
+    --focus: #F1EDE4; --today: #B9B98A; --launch: #F1EDE4;
+    --pil-ritual: #C5C58C; --pil-pieces: #9FB8A3; --pil-method: #D2A56E; --pil-materials: #9DB0BC; --pil-community: #D0A39B; --pil-house: #B3B3A8;
+    --st-planned: #4A5648; --st-drafted: #D2A56E; --st-scheduled: #9DB0BC; --st-published: #9FB8A3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1A231C; --bg-2: #202B22; --band: #263329; --chip: #263329;
+  --fg: #E6E1D6; --head: #F1EDE4; --muted: #A9AE9E; --rule: #35443A;
+  --olive: #B9B98A; --olive-deep: #D3D3A6; --dark: #0F1611; --on-dark: #F1EDE4; --on-dark-dim: #B7BBA8;
+  --focus: #F1EDE4; --today: #B9B98A; --launch: #F1EDE4;
+  --pil-ritual: #C5C58C; --pil-pieces: #9FB8A3; --pil-method: #D2A56E; --pil-materials: #9DB0BC; --pil-community: #D0A39B; --pil-house: #B3B3A8;
+  --st-planned: #4A5648; --st-drafted: #D2A56E; --st-scheduled: #9DB0BC; --st-published: #9FB8A3;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { font-size: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-weight: 400; font-size: 15.5px; line-height: 1.7; }
+body { padding-inline: clamp(16px, 4vw, 48px); padding-block: 0 96px; }
+::selection { background: var(--dark); color: var(--on-dark); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--olive); text-underline-offset: 3px; }
+h1, h2, h3, h4 { font-family: var(--display); color: var(--head); font-weight: 500; margin: 0; text-wrap: balance; line-height: 1.12; letter-spacing: -0.01em; }
+h1 { font-size: clamp(40px, 6vw, 68px); }
+h2 { font-size: clamp(28px, 3.4vw, 40px); }
+h3 { font-size: 24px; }
+h4 { font-size: 20px; font-family: var(--body); font-weight: 500; letter-spacing: 0; color: var(--head); }
+p { margin: 0; max-width: 68ch; }
+ul, ol { margin: 0; padding-left: 1.2em; max-width: 68ch; }
+li { margin-block: 4px; }
+.eyebrow { font-family: var(--body); font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--olive-deep); }
+.wrap { max-width: 1240px; margin-inline: auto; }
+.page { display: grid; gap: 0; }
+
+header.top { padding-block: clamp(40px, 7vh, 88px) 32px; display: grid; gap: 18px; border-bottom: 1px solid var(--rule); }
+header.top .lede { font-size: 18px; max-width: 64ch; }
+header.top .facts { display: flex; flex-wrap: wrap; gap: 8px 28px; color: var(--muted); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+header.top .facts b { color: var(--fg); font-weight: 500; }
+
+nav.jump { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--rule); }
+.page *, .page { min-width: 0; }
+nav.jump ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 4px 22px; overflow-x: auto; max-width: none; padding-block: 12px; scrollbar-width: none; }
+nav.jump li { margin: 0; white-space: nowrap; }
+nav.jump a { text-decoration: none; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; color: var(--muted); }
+nav.jump a:hover { color: var(--head); }
+
+section { padding-block: clamp(48px, 7vh, 80px); border-bottom: 1px solid var(--rule); display: grid; gap: 26px; }
+section > .head { display: grid; gap: 10px; }
+section > .head p { color: var(--muted); }
+
+/* priorities */
+.four { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 32px 28px; }
+.four > div { display: grid; gap: 10px; align-content: start; border-top: 1px solid var(--rule); padding-top: 14px; }
+.four h3 { font-size: 26px; }
+.four p { font-size: 14.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button, .chips span.chip { font: inherit; font-size: 12px; letter-spacing: 0.04em; padding: 2px 9px; border: 1px solid var(--rule); border-radius: 999px; background: var(--chip); color: var(--fg); cursor: pointer; line-height: 1.6; }
+.chips button:hover { border-color: var(--head); }
+
+/* phases */
+.phases { display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.phase { display: grid; grid-template-columns: 140px 1fr; gap: 8px 28px; padding-block: 18px; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.phase .n { font-family: var(--display); font-size: 30px; color: var(--head); line-height: 1; }
+.phase .d { color: var(--muted); font-size: 13.5px; }
+.phase h3 { font-size: 24px; }
+.phase p { font-size: 14.5px; }
+.bar { grid-column: 1 / -1; height: 6px; border-radius: 999px; background: var(--rule); position: relative; overflow: hidden; }
+.bar i { position: absolute; top: 0; bottom: 0; background: var(--olive); }
+@media (max-width: 640px) { .phase { grid-template-columns: 1fr; } }
+
+/* calendar toolbar */
+.toolbar { display: grid; gap: 14px; }
+.toolbar .row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; overflow: hidden; }
+.seg button { font: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; padding: 7px 16px; background: transparent; color: var(--muted); border: 0; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--dark); color: var(--on-dark); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lab { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.filters button { font: inherit; font-size: 12.5px; padding: 3px 11px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; color: var(--fg); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.filters button[aria-pressed="true"] { background: var(--chip); border-color: var(--head); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.progress { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; align-items: center; }
+.progress .k { display: inline-flex; align-items: center; gap: 7px; }
+.progress .note { font-style: italic; font-family: var(--display); font-size: 16px; color: var(--muted); }
+
+/* month grid */
+.month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.month .dow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); padding: 10px 10px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--bg-2); }
+.day { min-height: 124px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 8px 8px 10px; display: grid; align-content: start; gap: 6px; min-width: 0; }
+.day.out { background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--bg-2) 6px 7px); }
+.day.launch { background: var(--band); }
+.day .dn { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.day .dn b { font-weight: 500; color: var(--fg); font-family: var(--display); font-size: 18px; }
+.day.today .dn b { color: var(--head); text-decoration: underline; text-decoration-color: var(--today); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.day .tag { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--olive-deep); }
+.post { font: inherit; text-align: left; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; width: 100%; min-width: 0; padding: 5px 8px 6px; border: 1px solid var(--rule); border-left: 3px solid var(--pc, var(--rule)); background: var(--chip); color: var(--fg); cursor: pointer; border-radius: 0; line-height: 1.35; }
+.post:hover { border-color: var(--head); border-left-color: var(--pc); }
+.post .m { font-size: 10px; letter-spacing: 0.12em; font-weight: 600; color: var(--muted); }
+.post .t { font-size: 12.5px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.post .s { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; font-size: 10.5px; color: var(--muted); letter-spacing: 0.04em; }
+.post .s i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: var(--sc); }
+.post.dim { opacity: 0.32; }
+.stories-line { font: inherit; font-size: 11.5px; color: var(--muted); background: none; border: 0; padding: 0; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+.stories-line:hover { color: var(--head); }
+@media (max-width: 760px) { .month { display: none; } .only-list { display: block; } }
+.only-list { display: none; font-size: 13px; color: var(--muted); }
+
+/* list view */
+.list { display: grid; gap: 0; }
+.list .ph { padding-block: 22px 10px; display: grid; gap: 4px; }
+.list .ph h3 { font-size: 28px; }
+.list .ph p { color: var(--muted); font-size: 14px; }
+.dayrow { display: grid; grid-template-columns: 150px 1fr; gap: 10px 28px; padding-block: 16px; border-top: 1px solid var(--rule); }
+.dayrow .dl { display: grid; gap: 2px; align-content: start; }
+.dayrow .dl b { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--head); line-height: 1.1; }
+.dayrow .dl span { color: var(--muted); font-size: 13px; }
+.dayrow .dl .tag { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--olive-deep); margin-top: 6px; }
+.dayrow .items { display: grid; gap: 12px; min-width: 0; }
+.card { display: grid; gap: 8px; padding: 14px 16px 16px; border: 1px solid var(--rule); border-left: 3px solid var(--pc, var(--rule)); background: var(--chip); min-width: 0; }
+.card .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); letter-spacing: 0.04em; align-items: center; }
+.card .meta .st { display: inline-flex; align-items: center; gap: 6px; }
+.card .meta .st i { width: 8px; height: 8px; border-radius: 50%; background: var(--sc); display: inline-block; }
+.card h4 { font-family: var(--display); font-size: 24px; font-weight: 500; }
+.card .hook { font-family: var(--display); font-style: italic; font-size: 18px; color: var(--head); }
+.card dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 16px; margin: 0; font-size: 14px; }
+.card dt { color: var(--muted); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; padding-top: 3px; }
+.card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.card .open { font: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; background: none; border: 0; color: var(--head); padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--olive); text-underline-offset: 4px; justify-self: start; }
+.card.dim { opacity: 0.32; }
+.stories-only { padding: 12px 16px; border: 1px dashed var(--rule); color: var(--muted); font-size: 14px; }
+.stories-only b { color: var(--fg); font-weight: 500; }
+@media (max-width: 640px) { .dayrow { grid-template-columns: 1fr; } .card dl { grid-template-columns: 1fr; gap: 2px 0; } .card dt { padding-top: 8px; } }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(20, 28, 22, 0.35); z-index: 20; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100%); background: var(--bg); border-left: 1px solid var(--rule); z-index: 21; overflow-y: auto; padding: calc(24px + env(safe-area-inset-top, 0px)) clamp(18px, 4vw, 36px) calc(40px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 18px; align-content: start; }
+.drawer .bar-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.drawer .close { font: inherit; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 6px 14px; color: var(--fg); cursor: pointer; }
+.drawer h3 { font-size: 34px; }
+.drawer .hook { font-family: var(--display); font-style: italic; font-size: 20px; color: var(--head); }
+.drawer .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); }
+.drawer .meta .pill { display: inline-flex; align-items: center; gap: 6px; }
+.drawer dl { display: grid; grid-template-columns: 1fr; gap: 2px 0; margin: 0; }
+.drawer dt { color: var(--muted); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 14px; }
+.drawer dd { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.drawer dd.cap { background: var(--bg-2); padding: 12px 14px; border-left: 3px solid var(--olive); font-family: var(--display); font-size: 18px; line-height: 1.5; white-space: pre-wrap; }
+.drawer .copy { font: inherit; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; color: var(--fg); cursor: pointer; margin-top: 8px; }
+.drawer .status { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--rule); background: var(--chip); }
+.drawer .status label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.drawer select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--fg); border-radius: 0; }
+.drawer .status .ro { font-size: 13.5px; color: var(--muted); }
+.drawer .stories { display: grid; gap: 4px; }
+.drawer .stories li { font-size: 14px; }
+.drawer .nav2 { display: flex; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.drawer .nav2 button { font: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; background: none; border: 0; color: var(--head); cursor: pointer; padding: 6px 0; text-decoration: underline; text-decoration-color: var(--olive); text-underline-offset: 4px; }
+.drawer .nav2 button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--dark); color: var(--on-dark); padding: 10px 18px; font-size: 13px; z-index: 30; border-radius: 999px; }
+
+/* legend + sections */
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px 28px; }
+.legend > div { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; font-size: 14.5px; }
+.legend .dot { position: relative; top: -1px; }
+.legend b { font-weight: 500; color: var(--head); }
+.legend p { grid-column: 2; color: var(--muted); font-size: 13.5px; }
+.formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 28px; }
+.formats > div { display: grid; grid-template-columns: 34px 1fr; gap: 2px 10px; font-size: 14px; align-items: baseline; }
+.formats .m { font-size: 11px; letter-spacing: 0.14em; font-weight: 600; color: var(--muted); border: 1px solid var(--rule); padding: 1px 6px; text-align: center; }
+.formats p { grid-column: 2; color: var(--muted); font-size: 13.5px; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 48px; align-items: start; }
+.two > div { display: grid; gap: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
+th { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.k { white-space: nowrap; color: var(--head); font-weight: 500; }
+.tablewrap { overflow-x: auto; }
+.wave { display: grid; gap: 8px; }
+.wave h4 { font-family: var(--display); font-size: 24px; }
+.step { display: grid; grid-template-columns: 130px 1fr; gap: 4px 18px; font-size: 14.5px; padding-block: 8px; border-top: 1px solid var(--rule); }
+.step b { color: var(--head); font-weight: 500; }
+@media (max-width: 480px) { .step { grid-template-columns: 1fr; } }
+.words { display: flex; flex-wrap: wrap; gap: 6px; }
+.words span { font-size: 13px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--rule); }
+.words.ok span { background: var(--chip); }
+.words.no span { text-decoration: line-through; color: var(--muted); }
+.check { list-style: none; padding: 0; display: grid; gap: 6px; }
+.check li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; }
+.check li::before { content: ""; width: 12px; height: 12px; border: 1px solid var(--head); margin-top: 7px; }
+.quote { font-family: var(--display); font-size: 20px; line-height: 1.5; color: var(--head); border-left: 3px solid var(--olive); padding-left: 16px; max-width: 60ch; }
+footer { padding-block: 40px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 24px; }
+footer .sig { font-family: var(--display); font-style: italic; font-size: 17px; color: var(--head); }
+@media (prefers-reduced-motion: no-preference) { .drawer { animation: slide .28s ease; } @keyframes slide { from { transform: translateX(24px); opacity: 0 } to { transform: none; opacity: 1 } } }
+</style>
+
+<div class="wrap page">
+  <header class="top">
+    <div class="eyebrow">Instagram · @noyauskin · 25 September – 31 October 2026</div>
+    <h1>Noyau Content Calendar</h1>
+    <p class="lede" id="lede"></p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <nav class="jump" aria-label="Sections">
+    <ul>
+      <li><a href="#calendar">Calendar</a></li>
+      <li><a href="#priorities">Priorities</a></li>
+      <li><a href="#phases">Phases</a></li>
+      <li><a href="#pillars">Pillars</a></li>
+      <li><a href="#stories">Stories</a></li>
+      <li><a href="#creators">Creators</a></li>
+      <li><a href="#wholesale">Wholesale</a></li>
+      <li><a href="#voice">Voice</a></li>
+      <li><a href="#timing">Timing</a></li>
+      <li><a href="#measure">Measurement</a></li>
+      <li><a href="#checklist">Checklist</a></li>
+      <li><a href="#depends">Dependencies</a></li>
+    </ul>
+  </nav>
+
+  <section id="calendar">
+    <div class="head">
+      <div class="eyebrow">The calendar</div>
+      <h2>Thirty-seven days, one launch</h2>
+      <p>Open any post for its full brief, asset pull, caption draft and the day's stories. Statuses save for everyone who opens this page.</p>
+    </div>
+    <div class="toolbar">
+      <div class="row">
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" id="v-month" aria-pressed="true">Month</button>
+          <button type="button" id="v-list" aria-pressed="false">List</button>
+        </div>
+        <div class="progress" id="progress"></div>
+      </div>
+      <div class="filters" id="f-pillar"><span class="lab">Pillar</span></div>
+      <div class="filters" id="f-format"><span class="lab">Format</span></div>
+      <div class="filters" id="f-priority"><span class="lab">Priority</span></div>
+    </div>
+    <p class="only-list">On a phone the calendar shows as a list. The month grid appears on wider screens.</p>
+    <div class="month" id="month" aria-label="Month grid"></div>
+    <div class="list" id="list" hidden></div>
+  </section>
+
+  <section id="priorities">
+    <div class="head">
+      <div class="eyebrow">Strategy</div>
+      <h2>Four priorities, one calendar</h2>
+      <p>Every post is tagged with the priority it serves. Tap a post code to open it.</p>
+    </div>
+    <div class="four" id="priorities-grid"></div>
+  </section>
+
+  <section id="phases">
+    <div class="head">
+      <div class="eyebrow">Phases</div>
+      <h2>From a name to a ritual worth keeping</h2>
+    </div>
+    <div class="phases" id="phases-list"></div>
+  </section>
+
+  <section id="pillars">
+    <div class="head">
+      <div class="eyebrow">Content pillars and formats</div>
+      <h2>What the posts are made of</h2>
+    </div>
+    <div class="legend" id="pillars-legend"></div>
+    <div class="formats" id="formats-legend"></div>
+  </section>
+
+  <section id="stories">
+    <div class="head">
+      <div class="eyebrow">Stories</div>
+      <h2>Every day, three to six frames</h2>
+      <p>Stories keep the followers the feed brings in. The day-by-day frames sit inside each post; this is the rhythm they follow.</p>
+    </div>
+    <div class="two">
+      <div>
+        <h4>Daily</h4>
+        <ul id="st-daily"></ul>
+        <h4>Rules</h4>
+        <ul id="st-rules"></ul>
+      </div>
+      <div>
+        <h4>Weekly fixtures</h4>
+        <div class="tablewrap"><table id="st-weekly"></table></div>
+        <h4>Highlights to build</h4>
+        <div class="words ok" id="st-high"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="creators">
+    <div class="head">
+      <div class="eyebrow">Creator collaborations</div>
+      <h2>Two waves, four Collab reels</h2>
+    </div>
+    <div class="two">
+      <div>
+        <h4>Principles</h4>
+        <ul id="cr-principles"></ul>
+        <h4>The brief, in five lines</h4>
+        <ul id="cr-brief"></ul>
+      </div>
+      <div id="cr-waves"></div>
+    </div>
+  </section>
+
+  <section id="wholesale">
+    <div class="head">
+      <div class="eyebrow">Spas, clinics and salons</div>
+      <h2>One post, one deck, ten conversations</h2>
+    </div>
+    <div id="wh-steps"></div>
+  </section>
+
+  <section id="voice">
+    <div class="head">
+      <div class="eyebrow">Voice and claims</div>
+      <h2>How the house speaks</h2>
+    </div>
+    <div class="two">
+      <div>
+        <h4>Rules</h4>
+        <ul id="vo-rules"></ul>
+        <h4>Claims to hold back</h4>
+        <ul id="vo-claims"></ul>
+      </div>
+      <div>
+        <h4>Allowed</h4>
+        <div class="words ok" id="vo-ok"></div>
+        <h4>Avoided</h4>
+        <div class="words no" id="vo-no"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="timing">
+    <div class="head">
+      <div class="eyebrow">Timing, cadence and hashtags</div>
+      <h2>When, and how often</h2>
+      <p id="tz"></p>
+    </div>
+    <div class="two">
+      <div>
+        <div class="tablewrap"><table id="ti-slots"></table></div>
+      </div>
+      <div>
+        <h4>Cadence</h4>
+        <ul id="ti-cadence"></ul>
+        <h4>Hashtags</h4>
+        <div class="words ok" id="ti-house"></div>
+        <div class="words" id="ti-rotate"></div>
+        <p id="ti-rule" style="color:var(--muted);font-size:13.5px"></p>
+        <h4>Search terms for the first two lines</h4>
+        <div class="words" id="ti-keys"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="measure">
+    <div class="head">
+      <div class="eyebrow">Measurement</div>
+      <h2>The Friday review</h2>
+      <p id="me-weekly"></p>
+    </div>
+    <div class="tablewrap"><table id="me-table"></table></div>
+  </section>
+
+  <section id="checklist">
+    <div class="head">
+      <div class="eyebrow">Before every post</div>
+      <h2>Pre-flight</h2>
+    </div>
+    <ul class="check" id="ck-list"></ul>
+  </section>
+
+  <section id="depends">
+    <div class="head">
+      <div class="eyebrow">Dependencies and open items</div>
+      <h2>What has to be true first</h2>
+    </div>
+    <div class="tablewrap"><table id="dp-table"></table></div>
+  </section>
+
+  <footer>
+    <span class="sig">With care, Noyau</span>
+    <span id="foot"></span>
+  </footer>
+</div>
+
+<div id="drawer-root"></div>
+
+<script>
+const DATA = /*__DATA__*/{};
+(function () {
+  const { meta, priorities, phases, pillars, formats, posts, stories, storiesPlaybook, creators, wholesale, voice, timing, measurement, checklist, dependencies } = DATA;
+  const $ = (s, r = document) => r.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") n.className = v;
+      else if (k === "html") n.innerHTML = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (v !== null && v !== undefined) n.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid !== null && kid !== undefined) n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return n;
+  };
+  const pillarVar = { "Ritual": "var(--pil-ritual)", "Pieces": "var(--pil-pieces)", "Method": "var(--pil-method)", "Materials": "var(--pil-materials)", "Community": "var(--pil-community)", "House notes": "var(--pil-house)" };
+  const formatMark = Object.fromEntries(formats.map(f => [f.key, f.mark]));
+  const STATUS = ["planned", "drafted", "scheduled", "published"];
+  const statusVar = { planned: "var(--st-planned)", drafted: "var(--st-drafted)", scheduled: "var(--st-scheduled)", published: "var(--st-published)" };
+  const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const d = s => { const [y, m, dd] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, dd)); };
+  const iso = dt => dt.toISOString().slice(0, 10);
+  const fmtDay = s => { const dt = d(s); return `${DOW[(dt.getUTCDay() + 6) % 7]} ${dt.getUTCDate()} ${MON[dt.getUTCMonth()].slice(0, 3)}`; };
+  const fmtLong = s => { const dt = d(s); return `${["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][(dt.getUTCDay() + 6) % 7]} ${dt.getUTCDate()} ${MON[dt.getUTCMonth()]}`; };
+  const byDate = {};
+  posts.forEach(p => (byDate[p.date] ||= []).push(p));
+  const postById = Object.fromEntries(posts.map(p => [p.id, p]));
+
+  // state
+  const state = { view: "month", pillar: new Set(), format: new Set(), priority: new Set(), status: {}, canEdit: null, open: null };
+  const prefKey = "noyau-cal-view";
+  try { const v = localStorage.getItem(prefKey); if (v === "list" || v === "month") state.view = v; } catch (e) {}
+  if (window.innerWidth < 760) state.view = "list";
+
+  const statusOf = p => (state.status[p.id] && state.status[p.id].s) || p.status || "planned";
+  const visible = p => (!state.pillar.size || state.pillar.has(p.pillar)) && (!state.format.size || state.format.has(p.format)) && (!state.priority.size || p.priority.some(x => state.priority.has(x)));
+
+  // header
+  $("#lede").textContent = meta.summary;
+  const counts = { total: posts.length };
+  formats.forEach(f => counts[f.key] = posts.filter(p => p.format === f.key).length);
+  const collabs = counts["Collab reel"];
+  $("#facts").append(
+    el("span", {}, el("b", {}, counts.total), " feed posts"),
+    el("span", {}, el("b", {}, counts.Reel), " reels"),
+    el("span", {}, el("b", {}, counts.Carousel), " carousels"),
+    el("span", {}, el("b", {}, counts.Static), " statics"),
+    el("span", {}, el("b", {}, collabs), " creator Collab reels"),
+    el("span", {}, el("b", {}, Object.keys(stories).length), " days of stories"),
+    el("span", {}, "Launch ", el("b", {}, "Saturday 3 October, 10:00")),
+    el("span", {}, "Updated ", el("b", {}, meta.updated)),
+  );
+  $("#foot").textContent = `${meta.title} · ${meta.range} · times in ${meta.timezone} · updated ${meta.updated}`;
+  $("#tz").textContent = `All times are ${meta.timezone}.`;
+
+  // filters
+  function filterRow(rootSel, items, set, colourFn) {
+    const root = $(rootSel);
+    items.forEach(it => {
+      const b = el("button", { type: "button", "aria-pressed": "false", onclick: () => { set.has(it) ? set.delete(it) : set.add(it); b.setAttribute("aria-pressed", set.has(it)); render(); } },
+        colourFn ? el("span", { class: "dot", style: `background:${colourFn(it)}` }) : null, it);
+      root.append(b);
+    });
+  }
+  filterRow("#f-pillar", pillars.map(p => p.key), state.pillar, k => pillarVar[k]);
+  filterRow("#f-format", formats.map(f => f.key), state.format, null);
+  filterRow("#f-priority", priorities.map(p => p.key), state.priority, null);
+  $("#v-month").addEventListener("click", () => setView("month"));
+  $("#v-list").addEventListener("click", () => setView("list"));
+  function setView(v) { state.view = v; try { localStorage.setItem(prefKey, v); } catch (e) {} render(); }
+
+  // month grid
+  function renderMonth() {
+    const root = $("#month"); root.innerHTML = "";
+    DOW.forEach(x => root.append(el("div", { class: "dow" }, x)));
+    const start = d(meta.start), end = d(meta.end);
+    const first = new Date(start); first.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7));
+    const last = new Date(end); last.setUTCDate(last.getUTCDate() + (6 - ((last.getUTCDay() + 6) % 7)));
+    const todayIso = iso(new Date(Date.now() + 4 * 3600 * 1000));
+    for (let cur = new Date(first); cur <= last; cur.setUTCDate(cur.getUTCDate() + 1)) {
+      const key = iso(cur);
+      const inRange = cur >= start && cur <= end;
+      const cell = el("div", { class: "day" + (inRange ? "" : " out") + (key === meta.launch ? " launch" : "") + (key === todayIso ? " today" : ""), role: "group", "aria-label": fmtLong(key) });
+      const dn = el("div", { class: "dn" }, el("b", {}, cur.getUTCDate()), (cur.getUTCDate() === 1 || key === meta.start) ? el("span", {}, MON[cur.getUTCMonth()].slice(0, 3)) : null);
+      cell.append(dn);
+      if (key === meta.launch) cell.append(el("div", { class: "tag" }, "Launch"));
+      if (!inRange) { root.append(cell); continue; }
+      const dayPosts = byDate[key] || [];
+      dayPosts.forEach(p => cell.append(postChip(p)));
+      if (stories[key]) {
+        const n = stories[key].length;
+        cell.append(el("button", { type: "button", class: "stories-line", onclick: () => openDay(key) }, dayPosts.length ? `Stories · ${n} frames` : `Stories only · ${n} frames`));
+      }
+      root.append(cell);
+    }
+  }
+  function postChip(p) {
+    const st = statusOf(p);
+    return el("button", { type: "button", class: "post" + (visible(p) ? "" : " dim"), style: `--pc:${pillarVar[p.pillar]};--sc:${statusVar[st]}`, onclick: () => openPost(p.id), "aria-label": `${p.id} ${p.title}` },
+      el("span", { class: "m" }, formatMark[p.format]),
+      el("span", { class: "t" }, p.title),
+      el("span", { class: "s" }, el("i"), `${p.time} · ${st}`));
+  }
+
+  // list view
+  function renderList() {
+    const root = $("#list"); root.innerHTML = "";
+    phases.forEach(ph => {
+      root.append(el("div", { class: "ph" }, el("div", { class: "eyebrow" }, `Phase ${ph.n} · ${ph.dates}`), el("h3", {}, ph.name), el("p", {}, ph.goal)));
+      const s = d(ph.start), e = d(ph.end);
+      for (let cur = new Date(s); cur <= e; cur.setUTCDate(cur.getUTCDate() + 1)) {
+        const key = iso(cur);
+        const dayPosts = byDate[key] || [];
+        if (!dayPosts.length && !stories[key]) continue;
+        const dl = el("div", { class: "dl" }, el("b", {}, `${cur.getUTCDate()} ${MON[cur.getUTCMonth()].slice(0, 3)}`), el("span", {}, ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][(cur.getUTCDay() + 6) % 7]), key === meta.launch ? el("span", { class: "tag" }, "Launch day") : null);
+        const items = el("div", { class: "items" });
+        dayPosts.forEach(p => items.append(postCard(p)));
+        if (stories[key]) items.append(el("div", { class: "stories-only" }, el("b", {}, dayPosts.length ? "Stories. " : "Stories only. "), stories[key].join(" · ")));
+        root.append(el("div", { class: "dayrow" }, dl, items));
+      }
+    });
+  }
+  function postCard(p) {
+    const st = statusOf(p);
+    const dl = el("dl", {});
+    const row = (k, v) => { if (v) dl.append(el("dt", {}, k), el("dd", {}, v)); };
+    row("Brief", p.brief); row("Asset", p.asset); row("Caption", p.caption); row("Call to order", p.cta); row("Notes", p.notes);
+    return el("article", { class: "card" + (visible(p) ? "" : " dim"), style: `--pc:${pillarVar[p.pillar]};--sc:${statusVar[st]}`, id: "card-" + p.id },
+      el("div", { class: "meta" }, el("span", {}, p.id), el("span", {}, `${p.time}`), el("span", {}, p.format), el("span", {}, p.pillar), el("span", {}, p.priority.join(" · ")), el("span", { class: "st" }, el("i"), st), p.flex ? el("span", {}, "flex") : null, el("span", {}, `effort: ${p.effort}`)),
+      el("h4", {}, p.title),
+      el("div", { class: "hook" }, p.hook),
+      dl,
+      el("button", { type: "button", class: "open", onclick: () => openPost(p.id) }, "Open with stories and status"));
+  }
+
+  // progress
+  function renderProgress() {
+    const c = { planned: 0, drafted: 0, scheduled: 0, published: 0 };
+    posts.forEach(p => c[statusOf(p)]++);
+    const root = $("#progress"); root.innerHTML = "";
+    STATUS.forEach(s => root.append(el("span", { class: "k" }, el("span", { class: "dot", style: `background:${statusVar[s]}` }), `${c[s]} ${s}`)));
+    const note = state.canEdit === false ? "Statuses are read-only for you." : state.canEdit === null ? "" : "";
+    if (note) root.append(el("span", { class: "note" }, note));
+  }
+
+  function render() {
+    $("#v-month").setAttribute("aria-pressed", state.view === "month");
+    $("#v-list").setAttribute("aria-pressed", state.view === "list");
+    $("#month").hidden = state.view !== "month";
+    $("#list").hidden = state.view !== "list";
+    if (state.view === "month") renderMonth(); else renderList();
+    renderProgress();
+  }
+
+  // drawer
+  let toastT;
+  function toast(msg) { const t = el("div", { class: "toast" }, msg); document.body.append(t); clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 1800); }
+  function closeDrawer() { $("#drawer-root").innerHTML = ""; state.open = null; if (location.hash) history.replaceState(null, "", location.pathname + location.search); }
+  function openDay(key) {
+    const root = $("#drawer-root"); root.innerHTML = "";
+    const body = el("aside", { class: "drawer", role: "dialog", "aria-label": `Stories, ${fmtLong(key)}` },
+      el("div", { class: "bar-top" }, el("div", { class: "eyebrow" }, fmtLong(key)), el("button", { type: "button", class: "close", onclick: closeDrawer }, "Close")),
+      el("h3", {}, (byDate[key] || []).length ? "Stories" : "Stories only"),
+      el("ol", { class: "stories" }, (stories[key] || []).map(s => el("li", {}, s))),
+      (byDate[key] || []).length ? el("dl", {}, el("dt", {}, "Feed posts today"), el("dd", {}, el("div", { class: "chips" }, (byDate[key] || []).map(p => el("button", { type: "button", onclick: () => openPost(p.id) }, `${p.id} · ${p.title}`))))) : null);
+    root.append(el("div", { class: "scrim", onclick: closeDrawer }), body);
+    body.querySelector(".close").focus();
+  }
+  function openPost(id) {
+    const p = postById[id]; if (!p) return;
+    state.open = id;
+    history.replaceState(null, "", "#" + id);
+    const root = $("#drawer-root"); root.innerHTML = "";
+    const idx = posts.indexOf(p);
+    const st = statusOf(p);
+    const dl = el("dl", {});
+    const row = (k, v, cls) => { if (v) dl.append(el("dt", {}, k), el("dd", { class: cls || "" }, v)); };
+    row("Brief", p.brief);
+    row("Asset from the library", p.asset);
+    row("Caption draft", p.caption, "cap");
+    const copy = el("button", { type: "button", class: "copy", onclick: () => { const t = p.caption; (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Caption copied"), () => { const r = document.createRange(); r.selectNodeContents(dl.querySelector(".cap")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Select and copy"); }); } }, "Copy caption");
+    dl.append(el("dd", {}, copy));
+    row("Call to order", p.cta);
+    row("Notes and compliance", p.notes);
+    if (stories[p.date]) dl.append(el("dt", {}, "Stories that day"), el("dd", {}, el("ol", { class: "stories" }, stories[p.date].map(s => el("li", {}, s)))));
+    const statusBox = el("div", { class: "status" }, el("label", { for: "st-" + p.id }, "Status"));
+    if (state.canEdit === false || !state.db) {
+      statusBox.append(el("div", { class: "ro" }, el("span", { class: "dot", style: `background:${statusVar[st]};margin-right:8px;position:relative;top:-1px` }), st, state.db ? " · read-only for you" : " · saved statuses appear when the page is opened on claude.ai"));
+    } else {
+      const sel = el("select", { id: "st-" + p.id });
+      STATUS.forEach(s => sel.append(el("option", { value: s, selected: s === st ? "" : null }, s)));
+      sel.addEventListener("change", async () => {
+        const s = sel.value; sel.disabled = true;
+        try { await state.db.doc("status/" + p.id).set({ s, at: new Date().toISOString() }); toast(`${p.id} marked ${s}`); }
+        catch (e) { toast("Could not save; try again"); sel.value = statusOf(p); }
+        sel.disabled = false;
+      });
+      statusBox.append(sel);
+    }
+    const body = el("aside", { class: "drawer", role: "dialog", "aria-label": `${p.id} ${p.title}` },
+      el("div", { class: "bar-top" }, el("div", { class: "eyebrow" }, `${p.id} · ${fmtLong(p.date)} · ${p.time}`), el("button", { type: "button", class: "close", onclick: closeDrawer }, "Close")),
+      el("h3", {}, p.title),
+      el("div", { class: "hook" }, p.hook),
+      el("div", { class: "meta" },
+        el("span", { class: "pill" }, el("span", { class: "dot", style: `background:${pillarVar[p.pillar]}` }), p.pillar),
+        el("span", { class: "pill" }, p.format),
+        el("span", { class: "pill" }, "Serves: " + p.priority.map(k => (priorities.find(x => x.key === k) || {}).name || k).join(", ")),
+        el("span", { class: "pill" }, `Phase ${p.phase} · ${phases[p.phase].name}`),
+        el("span", { class: "pill" }, `Effort: ${p.effort}`),
+        p.flex ? el("span", { class: "pill" }, "Flex: may slip to stories") : null),
+      statusBox,
+      dl,
+      el("div", { class: "nav2" },
+        el("button", { type: "button", disabled: idx === 0 ? "" : null, onclick: () => openPost(posts[idx - 1].id) }, idx > 0 ? `Previous · ${posts[idx - 1].id}` : "Previous"),
+        el("button", { type: "button", disabled: idx === posts.length - 1 ? "" : null, onclick: () => openPost(posts[idx + 1].id) }, idx < posts.length - 1 ? `Next · ${posts[idx + 1].id}` : "Next")));
+    root.append(el("div", { class: "scrim", onclick: closeDrawer }), body);
+    body.scrollTop = 0;
+    body.querySelector(".close").focus();
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && state.open !== null) closeDrawer(); else if (e.key === "Escape") $("#drawer-root").innerHTML = ""; });
+
+  // sections
+  const prioRoot = $("#priorities-grid");
+  priorities.forEach(pr => {
+    const ids = posts.filter(p => p.priority.includes(pr.key)).map(p => p.id);
+    prioRoot.append(el("div", {}, el("h3", {}, pr.name), el("p", {}, pr.how), el("div", { class: "chips" }, ids.map(id => el("button", { type: "button", onclick: () => openPost(id) }, id)))));
+  });
+  const phRoot = $("#phases-list");
+  const total = (d(meta.end) - d(meta.start)) / 864e5 + 1;
+  phases.forEach(ph => {
+    const s = (d(ph.start) - d(meta.start)) / 864e5, len = (d(ph.end) - d(ph.start)) / 864e5 + 1;
+    const n = posts.filter(p => p.phase === ph.n).length;
+    phRoot.append(el("div", { class: "phase" },
+      el("div", {}, el("div", { class: "n" }, String(ph.n)), el("div", { class: "d" }, ph.dates), el("div", { class: "d" }, `${n} feed posts`)),
+      el("div", {}, el("h3", {}, ph.name), el("p", {}, ph.goal)),
+      el("div", { class: "bar", "aria-hidden": "true" }, el("i", { style: `left:${(s / total) * 100}%;width:${(len / total) * 100}%` }))));
+  });
+  const legend = $("#pillars-legend");
+  pillars.forEach(pl => legend.append(el("div", {}, el("span", { class: "dot", style: `background:${pillarVar[pl.key]}` }), el("b", {}, pl.key), el("p", {}, pl.what))));
+  const fl = $("#formats-legend");
+  formats.forEach(f => fl.append(el("div", {}, el("span", { class: "m" }, f.mark), el("b", {}, f.key), el("p", {}, f.note))));
+
+  const li = (root, arr) => arr.forEach(x => $(root).append(el("li", {}, x)));
+  li("#st-daily", storiesPlaybook.daily); li("#st-rules", storiesPlaybook.rules);
+  const stw = $("#st-weekly"); stw.append(el("tr", {}, el("th", {}, "Day"), el("th", {}, "Fixture"), el("th", {}, "What")));
+  storiesPlaybook.weekly.forEach(w => stw.append(el("tr", {}, el("td", { class: "k" }, w.day), el("td", {}, w.name), el("td", {}, w.what))));
+  storiesPlaybook.highlights.forEach(h => $("#st-high").append(el("span", {}, h)));
+
+  li("#cr-principles", creators.principles); li("#cr-brief", creators.brief);
+  const cw = $("#cr-waves");
+  creators.waves.forEach(w => { const box = el("div", { class: "wave" }, el("h4", {}, w.name)); w.steps.forEach(s => box.append(el("div", { class: "step" }, el("b", {}, s.when), el("span", {}, s.what)))); cw.append(box); });
+  const wh = $("#wh-steps");
+  wholesale.forEach(s => wh.append(el("div", { class: "step" }, el("b", {}, s.when), el("span", {}, s.what))));
+
+  li("#vo-rules", voice.rules); li("#vo-claims", voice.claims);
+  voice.allowed.forEach(w => $("#vo-ok").append(el("span", {}, w)));
+  voice.avoid.forEach(w => $("#vo-no").append(el("span", {}, w)));
+
+  const ts = $("#ti-slots"); ts.append(el("tr", {}, el("th", {}, "Slot"), el("th", {}, "Time"), el("th", {}, "Why")));
+  timing.slots.forEach(s => ts.append(el("tr", {}, el("td", { class: "k" }, s.slot), el("td", { style: "white-space:nowrap" }, s.time), el("td", {}, s.why))));
+  li("#ti-cadence", timing.cadence);
+  timing.hashtags.house.forEach(h => $("#ti-house").append(el("span", {}, h)));
+  timing.hashtags.rotate.forEach(h => $("#ti-rotate").append(el("span", {}, h)));
+  $("#ti-rule").textContent = timing.hashtags.rule;
+  timing.keywords.forEach(k => $("#ti-keys").append(el("span", {}, k)));
+
+  $("#me-weekly").textContent = measurement.weekly;
+  const mt = $("#me-table"); mt.append(el("tr", {}, el("th", {}, "Priority"), el("th", {}, "Metric"), el("th", {}, "Where"), el("th", {}, "Working target")));
+  measurement.metrics.forEach(m => mt.append(el("tr", {}, el("td", { class: "k" }, m.priority), el("td", {}, m.metric), el("td", {}, m.where), el("td", {}, m.target))));
+  checklist.forEach(c => $("#ck-list").append(el("li", {}, c)));
+  const dt = $("#dp-table"); dt.append(el("tr", {}, el("th", {}, "Item"), el("th", {}, "Needed"), el("th", {}, "Who")));
+  dependencies.forEach(x => dt.append(el("tr", {}, el("td", {}, x.item), el("td", { style: "white-space:nowrap" }, x.needed), el("td", {}, x.who))));
+
+  render();
+  const h = (location.hash || "").replace("#", "");
+  if (postById[h]) openPost(h);
+
+  // shared statuses
+  (async () => {
+    if (!window.claude || !window.claude.use) return;
+    const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+    if (!db) return;
+    state.db = db;
+    try { state.canEdit = user ? await user.canEdit() : false; } catch (e) { state.canEdit = false; }
+    db.collection("status").onSnapshot(snap => {
+      const next = {};
+      snap.docs.forEach(doc => { if (doc.exists) next[doc.id] = doc.data(); });
+      state.status = next;
+      render();
+      if (state.open && $("#drawer-root .drawer")) { const sel = $("#st-" + state.open); if (sel && document.activeElement !== sel) sel.value = statusOf(postById[state.open]); }
+    }, err => { console.warn("status subscription", err); });
+    if (state.open) openPost(state.open);
+  })();
+})();
+</script>

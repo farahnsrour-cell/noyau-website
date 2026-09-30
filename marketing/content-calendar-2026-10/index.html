@@ -1,0 +1,707 @@
+<title>Noyau Content Calendar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: a calm editorial document. One column of running text, a full-width month grid, hairline rules between sections, no cards except the post chips and the drawer. */
+:root {
+  --bg: #F1EDE4; --bg-2: #EAE5D9; --band: #E4D7C4; --chip: #FAF8F3;
+  --fg: #333333; --head: #2F4432; --muted: #6F6F65; --rule: #DADACF;
+  --olive: #B1B17F; --olive-deep: #7D7D55; --dark: #2F4432; --on-dark: #F1EDE4; --on-dark-dim: #C2C7B6;
+  --focus: #2F4432; --today: #B1B17F; --launch: #2F4432;
+  --pil-ritual: #9A9A63; --pil-pieces: #2F4432; --pil-method: #A8763F; --pil-materials: #6B7C88; --pil-community: #A87A73; --pil-house: #6F6F65;
+  --st-planned: #C9C4B6; --st-drafted: #B08A5A; --st-scheduled: #7A8A94; --st-published: #2F4432;
+  --display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1A231C; --bg-2: #202B22; --band: #263329; --chip: #263329;
+    --fg: #E6E1D6; --head: #F1EDE4; --muted: #A9AE9E; --rule: #35443A;
+    --olive: #B9B98A; --olive-deep: #D3D3A6; --dark: #0F1611; --on-dark: #F1EDE4; --on-dark-dim: #B7BBA8;
+    --focus: #F1EDE4; --today: #B9B98A; --launch: #F1EDE4;
+    --pil-ritual: #C5C58C; --pil-pieces: #9FB8A3; --pil-method: #D2A56E; --pil-materials: #9DB0BC; --pil-community: #D0A39B; --pil-house: #B3B3A8;
+    --st-planned: #4A5648; --st-drafted: #D2A56E; --st-scheduled: #9DB0BC; --st-published: #9FB8A3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1A231C; --bg-2: #202B22; --band: #263329; --chip: #263329;
+  --fg: #E6E1D6; --head: #F1EDE4; --muted: #A9AE9E; --rule: #35443A;
+  --olive: #B9B98A; --olive-deep: #D3D3A6; --dark: #0F1611; --on-dark: #F1EDE4; --on-dark-dim: #B7BBA8;
+  --focus: #F1EDE4; --today: #B9B98A; --launch: #F1EDE4;
+  --pil-ritual: #C5C58C; --pil-pieces: #9FB8A3; --pil-method: #D2A56E; --pil-materials: #9DB0BC; --pil-community: #D0A39B; --pil-house: #B3B3A8;
+  --st-planned: #4A5648; --st-drafted: #D2A56E; --st-scheduled: #9DB0BC; --st-published: #9FB8A3;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { font-size: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-weight: 400; font-size: 15.5px; line-height: 1.7; }
+body { padding-inline: clamp(16px, 4vw, 48px); padding-block: 0 96px; }
+::selection { background: var(--dark); color: var(--on-dark); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--olive); text-underline-offset: 3px; }
+h1, h2, h3, h4 { font-family: var(--display); color: var(--head); font-weight: 500; margin: 0; text-wrap: balance; line-height: 1.12; letter-spacing: -0.01em; }
+h1 { font-size: clamp(40px, 6vw, 68px); }
+h2 { font-size: clamp(28px, 3.4vw, 40px); }
+h3 { font-size: 24px; }
+h4 { font-size: 20px; font-family: var(--body); font-weight: 500; letter-spacing: 0; color: var(--head); }
+p { margin: 0; max-width: 68ch; }
+ul, ol { margin: 0; padding-left: 1.2em; max-width: 68ch; }
+li { margin-block: 4px; }
+.eyebrow { font-family: var(--body); font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--olive-deep); }
+.wrap { max-width: 1240px; margin-inline: auto; }
+.page { display: grid; gap: 0; }
+
+header.top { padding-block: clamp(40px, 7vh, 88px) 32px; display: grid; gap: 18px; border-bottom: 1px solid var(--rule); }
+header.top .lede { font-size: 18px; max-width: 64ch; }
+header.top .facts { display: flex; flex-wrap: wrap; gap: 8px 28px; color: var(--muted); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+header.top .facts b { color: var(--fg); font-weight: 500; }
+
+nav.jump { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--rule); }
+.page *, .page { min-width: 0; }
+nav.jump ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 4px 22px; overflow-x: auto; max-width: none; padding-block: 12px; scrollbar-width: none; }
+nav.jump li { margin: 0; white-space: nowrap; }
+nav.jump a { text-decoration: none; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; color: var(--muted); }
+nav.jump a:hover { color: var(--head); }
+
+section { padding-block: clamp(48px, 7vh, 80px); border-bottom: 1px solid var(--rule); display: grid; gap: 26px; }
+section > .head { display: grid; gap: 10px; }
+section > .head p { color: var(--muted); }
+
+/* priorities */
+.four { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 32px 28px; }
+.four > div { display: grid; gap: 10px; align-content: start; border-top: 1px solid var(--rule); padding-top: 14px; }
+.four h3 { font-size: 26px; }
+.four p { font-size: 14.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button, .chips span.chip { font: inherit; font-size: 12px; letter-spacing: 0.04em; padding: 2px 9px; border: 1px solid var(--rule); border-radius: 999px; background: var(--chip); color: var(--fg); cursor: pointer; line-height: 1.6; }
+.chips button:hover { border-color: var(--head); }
+
+/* phases */
+.phases { display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.phase { display: grid; grid-template-columns: 140px 1fr; gap: 8px 28px; padding-block: 18px; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.phase .n { font-family: var(--display); font-size: 30px; color: var(--head); line-height: 1; }
+.phase .d { color: var(--muted); font-size: 13.5px; }
+.phase h3 { font-size: 24px; }
+.phase p { font-size: 14.5px; }
+.bar { grid-column: 1 / -1; height: 6px; border-radius: 999px; background: var(--rule); position: relative; overflow: hidden; }
+.bar i { position: absolute; top: 0; bottom: 0; background: var(--olive); }
+@media (max-width: 640px) { .phase { grid-template-columns: 1fr; } }
+
+/* calendar toolbar */
+.toolbar { display: grid; gap: 14px; }
+.toolbar .row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; overflow: hidden; }
+.seg button { font: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; padding: 7px 16px; background: transparent; color: var(--muted); border: 0; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--dark); color: var(--on-dark); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lab { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.filters button { font: inherit; font-size: 12.5px; padding: 3px 11px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; color: var(--fg); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.filters button[aria-pressed="true"] { background: var(--chip); border-color: var(--head); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.progress { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; align-items: center; }
+.progress .k { display: inline-flex; align-items: center; gap: 7px; }
+.progress .note { font-style: italic; font-family: var(--display); font-size: 16px; color: var(--muted); }
+
+/* month grid */
+.month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.month .dow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); padding: 10px 10px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--bg-2); }
+.day { min-height: 124px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 8px 8px 10px; display: grid; align-content: start; gap: 6px; min-width: 0; }
+.day.out { background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--bg-2) 6px 7px); }
+.day.launch { background: var(--band); }
+.day .dn { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.day .dn b { font-weight: 500; color: var(--fg); font-family: var(--display); font-size: 18px; }
+.day.today .dn b { color: var(--head); text-decoration: underline; text-decoration-color: var(--today); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.day .tag { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--olive-deep); }
+.post { font: inherit; text-align: left; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; width: 100%; min-width: 0; padding: 5px 8px 6px; border: 1px solid var(--rule); border-left: 3px solid var(--pc, var(--rule)); background: var(--chip); color: var(--fg); cursor: pointer; border-radius: 0; line-height: 1.35; }
+.post:hover { border-color: var(--head); border-left-color: var(--pc); }
+.post .m { font-size: 10px; letter-spacing: 0.12em; font-weight: 600; color: var(--muted); }
+.post .t { font-size: 12.5px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.post .s { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; font-size: 10.5px; color: var(--muted); letter-spacing: 0.04em; }
+.post .s i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: var(--sc); }
+.post.dim { opacity: 0.32; }
+.stories-line { font: inherit; font-size: 11.5px; color: var(--muted); background: none; border: 0; padding: 0; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+.stories-line:hover { color: var(--head); }
+@media (max-width: 760px) { .month { display: none; } .only-list { display: block; } }
+.only-list { display: none; font-size: 13px; color: var(--muted); }
+
+/* list view */
+.list { display: grid; gap: 0; }
+.list .ph { padding-block: 22px 10px; display: grid; gap: 4px; }
+.list .ph h3 { font-size: 28px; }
+.list .ph p { color: var(--muted); font-size: 14px; }
+.dayrow { display: grid; grid-template-columns: 150px 1fr; gap: 10px 28px; padding-block: 16px; border-top: 1px solid var(--rule); }
+.dayrow .dl { display: grid; gap: 2px; align-content: start; }
+.dayrow .dl b { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--head); line-height: 1.1; }
+.dayrow .dl span { color: var(--muted); font-size: 13px; }
+.dayrow .dl .tag { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--olive-deep); margin-top: 6px; }
+.dayrow .items { display: grid; gap: 12px; min-width: 0; }
+.card { display: grid; gap: 8px; padding: 14px 16px 16px; border: 1px solid var(--rule); border-left: 3px solid var(--pc, var(--rule)); background: var(--chip); min-width: 0; }
+.card .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); letter-spacing: 0.04em; align-items: center; }
+.card .meta .st { display: inline-flex; align-items: center; gap: 6px; }
+.card .meta .st i { width: 8px; height: 8px; border-radius: 50%; background: var(--sc); display: inline-block; }
+.card h4 { font-family: var(--display); font-size: 24px; font-weight: 500; }
+.card .hook { font-family: var(--display); font-style: italic; font-size: 18px; color: var(--head); }
+.card dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 16px; margin: 0; font-size: 14px; }
+.card dt { color: var(--muted); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; padding-top: 3px; }
+.card dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.card .open { font: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; background: none; border: 0; color: var(--head); padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--olive); text-underline-offset: 4px; justify-self: start; }
+.card.dim { opacity: 0.32; }
+.stories-only { padding: 12px 16px; border: 1px dashed var(--rule); color: var(--muted); font-size: 14px; }
+.stories-only b { color: var(--fg); font-weight: 500; }
+@media (max-width: 640px) { .dayrow { grid-template-columns: 1fr; } .card dl { grid-template-columns: 1fr; gap: 2px 0; } .card dt { padding-top: 8px; } }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(20, 28, 22, 0.35); z-index: 20; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100%); background: var(--bg); border-left: 1px solid var(--rule); z-index: 21; overflow-y: auto; padding: calc(24px + env(safe-area-inset-top, 0px)) clamp(18px, 4vw, 36px) calc(40px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 18px; align-content: start; }
+.drawer .bar-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.drawer .close { font: inherit; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 6px 14px; color: var(--fg); cursor: pointer; }
+.drawer h3 { font-size: 34px; }
+.drawer .hook { font-family: var(--display); font-style: italic; font-size: 20px; color: var(--head); }
+.drawer .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); }
+.drawer .meta .pill { display: inline-flex; align-items: center; gap: 6px; }
+.drawer dl { display: grid; grid-template-columns: 1fr; gap: 2px 0; margin: 0; }
+.drawer dt { color: var(--muted); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 14px; }
+.drawer dd { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.drawer dd.cap { background: var(--bg-2); padding: 12px 14px; border-left: 3px solid var(--olive); font-family: var(--display); font-size: 18px; line-height: 1.5; white-space: pre-wrap; }
+.drawer .copy { font: inherit; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; color: var(--fg); cursor: pointer; margin-top: 8px; }
+.drawer .status { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--rule); background: var(--chip); }
+.drawer .status label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.drawer select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--fg); border-radius: 0; }
+.drawer .status .ro { font-size: 13.5px; color: var(--muted); }
+.drawer .stories { display: grid; gap: 4px; }
+.drawer .stories li { font-size: 14px; }
+.drawer .nav2 { display: flex; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.drawer .nav2 button { font: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; background: none; border: 0; color: var(--head); cursor: pointer; padding: 6px 0; text-decoration: underline; text-decoration-color: var(--olive); text-underline-offset: 4px; }
+.drawer .nav2 button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--dark); color: var(--on-dark); padding: 10px 18px; font-size: 13px; z-index: 30; border-radius: 999px; }
+
+/* legend + sections */
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px 28px; }
+.legend > div { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; font-size: 14.5px; }
+.legend .dot { position: relative; top: -1px; }
+.legend b { font-weight: 500; color: var(--head); }
+.legend p { grid-column: 2; color: var(--muted); font-size: 13.5px; }
+.formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 28px; }
+.formats > div { display: grid; grid-template-columns: 34px 1fr; gap: 2px 10px; font-size: 14px; align-items: baseline; }
+.formats .m { font-size: 11px; letter-spacing: 0.14em; font-weight: 600; color: var(--muted); border: 1px solid var(--rule); padding: 1px 6px; text-align: center; }
+.formats p { grid-column: 2; color: var(--muted); font-size: 13.5px; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 48px; align-items: start; }
+.two > div { display: grid; gap: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
+th { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.k { white-space: nowrap; color: var(--head); font-weight: 500; }
+.tablewrap { overflow-x: auto; }
+.wave { display: grid; gap: 8px; }
+.wave h4 { font-family: var(--display); font-size: 24px; }
+.step { display: grid; grid-template-columns: 130px 1fr; gap: 4px 18px; font-size: 14.5px; padding-block: 8px; border-top: 1px solid var(--rule); }
+.step b { color: var(--head); font-weight: 500; }
+@media (max-width: 480px) { .step { grid-template-columns: 1fr; } }
+.words { display: flex; flex-wrap: wrap; gap: 6px; }
+.words span { font-size: 13px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--rule); }
+.words.ok span { background: var(--chip); }
+.words.no span { text-decoration: line-through; color: var(--muted); }
+.check { list-style: none; padding: 0; display: grid; gap: 6px; }
+.check li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; }
+.check li::before { content: ""; width: 12px; height: 12px; border: 1px solid var(--head); margin-top: 7px; }
+.quote { font-family: var(--display); font-size: 20px; line-height: 1.5; color: var(--head); border-left: 3px solid var(--olive); padding-left: 16px; max-width: 60ch; }
+footer { padding-block: 40px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 24px; }
+footer .sig { font-family: var(--display); font-style: italic; font-size: 17px; color: var(--head); }
+@media (prefers-reduced-motion: no-preference) { .drawer { animation: slide .28s ease; } @keyframes slide { from { transform: translateX(24px); opacity: 0 } to { transform: none; opacity: 1 } } }
+</style>
+
+<div class="wrap page">
+  <header class="top">
+    <div class="eyebrow">Instagram · @noyauskin · 25 September – 31 October 2026</div>
+    <h1>Noyau Content Calendar</h1>
+    <p class="lede" id="lede"></p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <nav class="jump" aria-label="Sections">
+    <ul>
+      <li><a href="#calendar">Calendar</a></li>
+      <li><a href="#priorities">Priorities</a></li>
+      <li><a href="#phases">Phases</a></li>
+      <li><a href="#pillars">Pillars</a></li>
+      <li><a href="#stories">Stories</a></li>
+      <li><a href="#creators">Creators</a></li>
+      <li><a href="#wholesale">Wholesale</a></li>
+      <li><a href="#voice">Voice</a></li>
+      <li><a href="#timing">Timing</a></li>
+      <li><a href="#measure">Measurement</a></li>
+      <li><a href="#checklist">Checklist</a></li>
+      <li><a href="#depends">Dependencies</a></li>
+    </ul>
+  </nav>
+
+  <section id="calendar">
+    <div class="head">
+      <div class="eyebrow">The calendar</div>
+      <h2>Thirty-seven days, one launch</h2>
+      <p>Open any post for its full brief, asset pull, caption draft and the day's stories. Statuses save for everyone who opens this page.</p>
+    </div>
+    <div class="toolbar">
+      <div class="row">
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" id="v-month" aria-pressed="true">Month</button>
+          <button type="button" id="v-list" aria-pressed="false">List</button>
+        </div>
+        <div class="progress" id="progress"></div>
+      </div>
+      <div class="filters" id="f-pillar"><span class="lab">Pillar</span></div>
+      <div class="filters" id="f-format"><span class="lab">Format</span></div>
+      <div class="filters" id="f-priority"><span class="lab">Priority</span></div>
+    </div>
+    <p class="only-list">On a phone the calendar shows as a list. The month grid appears on wider screens.</p>
+    <div class="month" id="month" aria-label="Month grid"></div>
+    <div class="list" id="list" hidden></div>
+  </section>
+
+  <section id="priorities">
+    <div class="head">
+      <div class="eyebrow">Strategy</div>
+      <h2>Four priorities, one calendar</h2>
+      <p>Every post is tagged with the priority it serves. Tap a post code to open it.</p>
+    </div>
+    <div class="four" id="priorities-grid"></div>
+  </section>
+
+  <section id="phases">
+    <div class="head">
+      <div class="eyebrow">Phases</div>
+      <h2>From a name to a ritual worth keeping</h2>
+    </div>
+    <div class="phases" id="phases-list"></div>
+  </section>
+
+  <section id="pillars">
+    <div class="head">
+      <div class="eyebrow">Content pillars and formats</div>
+      <h2>What the posts are made of</h2>
+    </div>
+    <div class="legend" id="pillars-legend"></div>
+    <div class="formats" id="formats-legend"></div>
+  </section>
+
+  <section id="stories">
+    <div class="head">
+      <div class="eyebrow">Stories</div>
+      <h2>Every day, three to six frames</h2>
+      <p>Stories keep the followers the feed brings in. The day-by-day frames sit inside each post; this is the rhythm they follow.</p>
+    </div>
+    <div class="two">
+      <div>
+        <h4>Daily</h4>
+        <ul id="st-daily"></ul>
+        <h4>Rules</h4>
+        <ul id="st-rules"></ul>
+      </div>
+      <div>
+        <h4>Weekly fixtures</h4>
+        <div class="tablewrap"><table id="st-weekly"></table></div>
+        <h4>Highlights to build</h4>
+        <div class="words ok" id="st-high"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="creators">
+    <div class="head">
+      <div class="eyebrow">Creator collaborations</div>
+      <h2>Two waves, four Collab reels</h2>
+    </div>
+    <div class="two">
+      <div>
+        <h4>Principles</h4>
+        <ul id="cr-principles"></ul>
+        <h4>The brief, in five lines</h4>
+        <ul id="cr-brief"></ul>
+      </div>
+      <div id="cr-waves"></div>
+    </div>
+  </section>
+
+  <section id="wholesale">
+    <div class="head">
+      <div class="eyebrow">Spas, clinics and salons</div>
+      <h2>One post, one deck, ten conversations</h2>
+    </div>
+    <div id="wh-steps"></div>
+  </section>
+
+  <section id="voice">
+    <div class="head">
+      <div class="eyebrow">Voice and claims</div>
+      <h2>How the house speaks</h2>
+    </div>
+    <div class="two">
+      <div>
+        <h4>Rules</h4>
+        <ul id="vo-rules"></ul>
+        <h4>Claims to hold back</h4>
+        <ul id="vo-claims"></ul>
+      </div>
+      <div>
+        <h4>Allowed</h4>
+        <div class="words ok" id="vo-ok"></div>
+        <h4>Avoided</h4>
+        <div class="words no" id="vo-no"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="timing">
+    <div class="head">
+      <div class="eyebrow">Timing, cadence and hashtags</div>
+      <h2>When, and how often</h2>
+      <p id="tz"></p>
+    </div>
+    <div class="two">
+      <div>
+        <div class="tablewrap"><table id="ti-slots"></table></div>
+      </div>
+      <div>
+        <h4>Cadence</h4>
+        <ul id="ti-cadence"></ul>
+        <h4>Hashtags</h4>
+        <div class="words ok" id="ti-house"></div>
+        <div class="words" id="ti-rotate"></div>
+        <p id="ti-rule" style="color:var(--muted);font-size:13.5px"></p>
+        <h4>Search terms for the first two lines</h4>
+        <div class="words" id="ti-keys"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="measure">
+    <div class="head">
+      <div class="eyebrow">Measurement</div>
+      <h2>The Friday review</h2>
+      <p id="me-weekly"></p>
+    </div>
+    <div class="tablewrap"><table id="me-table"></table></div>
+  </section>
+
+  <section id="checklist">
+    <div class="head">
+      <div class="eyebrow">Before every post</div>
+      <h2>Pre-flight</h2>
+    </div>
+    <ul class="check" id="ck-list"></ul>
+  </section>
+
+  <section id="depends">
+    <div class="head">
+      <div class="eyebrow">Dependencies and open items</div>
+      <h2>What has to be true first</h2>
+    </div>
+    <div class="tablewrap"><table id="dp-table"></table></div>
+  </section>
+
+  <footer>
+    <span class="sig">With care, Noyau</span>
+    <span id="foot"></span>
+  </footer>
+</div>
+
+<div id="drawer-root"></div>
+
+<script>
+const DATA = {"checklist":["British spelling, no exclamation marks, no emoji, no ® on the logo.","Every word checked against the allowed and avoided lists.","One price, no discount language, no urgency language.","Sign-off present: With care, Noyau","Cover chosen; the grid alternates cream, forest and beige.","Alt text written for every post.","Three to five hashtags after the sign-off; search terms in the first two lines.","Link in bio and link sticker point to the right page.","Post reshared to stories within an hour; comments answered within the hour as the house."],"creators":{"principles":["Gifted first, paid second. Every creator receives the full kit, never a single piece.","No discount codes, no affiliate links, ever. Tracking is by a unique link with UTM parameters per creator.","Collab invite on every post, so the reel sits on both grids and reaches both audiences.","Creators use their own voice. The only rules are the claims list and the launch date.","Noyau approves the cut before it is posted, within twenty-four hours of receiving it."],"waves":[{"name":"Wave one · gifted","steps":[{"when":"By 1 October","what":"Shortlist eight to ten UAE and GCC creators: skincare, quiet-luxury home, wellness. Ten to a hundred thousand followers, real saves on their how-to content."},{"when":"1–2 October","what":"Send the interim creator brief by DM or email with the launch date, the allowed words and the Collab request. Confirm addresses."},{"when":"3–5 October","what":"Dispatch kits with a printed note from the house."},{"when":"8 and 13 October","what":"Two Collab reels on the grid (P13, P18). Extra deliveries go to stories and the 25 October community carousel."}]},{"name":"Wave two · gifted and paid","steps":[{"when":"12 October","what":"Shortlist six creators from wave-one learnings. Agree one or two paid posts with usage rights and a paid partnership label."},{"when":"14–15 October","what":"Dispatch kits."},{"when":"20 and 27 October","what":"Two Collab reels on the grid (P24, P30)."},{"when":"31 October","what":"Review reach, saves and link clicks per creator. Choose who continues in November."}]}],"brief":["The product: the Ritual Kit, eight pieces, sold complete, Forest Green or Light Beige, at noyauskin.com.","Ask: one reel, twenty to sixty seconds, in your own home and voice, posted as a Collab with @noyauskin.","Say: skincare ritual, the Ritual Kit, noyauskin.com. Allowed benefits: depuffing, lifting, plumping, boosts circulation or absorption.","Never: anti-ageing, firming, tightening, draining, detox, clinically tested, antibacterial, glow, miracle, transform, must-have, holy grail, sonic, clean, eco-friendly, sustainable, and never a discount.","Send the cut to Noyau before posting; the house replies within a day."]},"dependencies":[{"item":"Website: FAQ and Terms still say UAE-only delivery, and the site never shows the 2.8% fee","needed":"Before P09 on 4 October","who":"Developer"},{"item":"Website: gifting line says become instead of becomes; footer says Select pieces; support email has a stray space","needed":"Before P27 on 23 October (gifting), ideally before launch","who":"Developer"},{"item":"Confirm whether the mirror is part of the kit or sold separately, and which pieces carry the CE, RoHS, FCC, UKCA and EMC marks","needed":"Before P08 on 3 October","who":"Farah, from the fact sheet"},{"item":"Confirm the UAE delivery fee and time, and the exact textile materials for the headband set and pads","needed":"Before P09 and P19","who":"Farah, from the fact sheet"},{"item":"Interim creator brief (short version of tracker d18) for wave one","needed":"2 October","who":"Farah"},{"item":"Partner deck (tracker d28)","needed":"22 October","who":"Farah"},{"item":"Adviser check on collagen and acne wording for paid posts","needed":"Before 20 October","who":"Farah"},{"item":"Meta ad account is active. Optional: boost P07 on 3–5 October and P31 on 28–30 October, UAE and GCC, no discount language","needed":"If budget allows","who":"Farah"}],"formats":[{"key":"Reel","mark":"R","note":"15–60 seconds, 9:16, from the library. Cover chosen from the film, no text on the cover or one caps line."},{"key":"Carousel","mark":"C","note":"4:5, 6–10 slides, one idea per slide, last slide always a quiet call to order or to save."},{"key":"Static","mark":"S","note":"4:5 single image, used for announcements and notes."},{"key":"Collab reel","mark":"Co","note":"Made by the creator, co-authored with Noyau through the Collab invite. Noyau approves the cut, accepts the tag, and it appears on both grids."}],"measurement":{"weekly":"Every Friday, thirty minutes in Instagram Insights and the site's analytics. Note the three posts with the most reach, the three with the most saves, and the link clicks by day. Move next week's flex post towards whatever worked.","metrics":[{"priority":"Direct sales","metric":"Link sticker taps and link-in-bio clicks; site sessions from Instagram; orders and conversion rate","where":"Instagram Insights, the site's analytics, the order list","target":"Set after launch week. Working target: one order for every hundred link clicks."},{"priority":"Brand awareness","metric":"Reach; share of reach from non-followers; reel plays and average watch time","where":"Insights, per post","target":"Non-follower reach above half on reels by mid-October."},{"priority":"Audience growth","metric":"Followers; profile visits; follows per thousand reached; saves per carousel","where":"Insights, account and per post","target":"Working target: one thousand followers by 31 October, revised after week one."},{"priority":"Creator collaborations","metric":"Collab posts live; reach and saves per creator; clicks on each creator's UTM link","where":"Insights on the Collab post, the site's analytics by UTM","target":"Four Collab reels live by 27 October; at least one creator kept for November."},{"priority":"Wholesale","metric":"Replies to partnerships@ and the wholesale DM; decks sent; meetings booked","where":"Inbox","target":"Ten conversations opened, three meetings by 31 October."}]},"meta":{"title":"Noyau Content Calendar","range":"25 September – 31 October 2026","start":"2026-09-25","end":"2026-10-31","launch":"2026-10-03","handle":"@noyauskin","site":"noyauskin.com","timezone":"Gulf Standard Time (UTC+4)","updated":"30 September 2026","summary":"Thirty-four feed posts, stories every day, two creator waves and one wholesale moment, built around the 3 October launch of the Ritual Kit. Every post serves one of four priorities: direct sales, brand awareness, audience growth, creator collaborations."},"phases":[{"n":0,"name":"Prelude","dates":"25 September – 2 October","start":"2026-09-25","end":"2026-10-02","goal":"Give the name a shape before the product appears. Seed followers, dispatch creator wave one, count down.","posts":6},{"n":1,"name":"Launch week","dates":"3 – 9 October","start":"2026-10-03","end":"2026-10-09","goal":"The Ritual Kit arrives. One feed post a day, two on launch day. Remove every reason not to order. First Collab post on the grid.","posts":8},{"n":2,"name":"Method and proof","dates":"10 – 16 October","start":"2026-10-10","end":"2026-10-16","goal":"Teach the pieces. How-to reels and save-worthy carousels bring new followers; materials and answered questions bring trust. Creator wave one lands.","posts":7},{"n":3,"name":"Deepen and widen","dates":"17 – 23 October","start":"2026-10-17","end":"2026-10-23","goal":"Widen the audience: creator wave two, the wholesale post for spas and clinics, gifting as Q4 opens, and pure ambience for reach.","posts":6},{"n":4,"name":"Worth keeping","dates":"24 – 31 October","start":"2026-10-24","end":"2026-10-31","goal":"Care, longevity and community. The strongest conversion posts sit on payday week. Close the month with what was kept.","posts":7}],"pillars":[{"key":"Ritual","colour":"#B1B17F","what":"Ambience. The order of a ritual, textures, sound, light. Nothing to buy in the frame, and the product in every frame."},{"key":"Pieces","colour":"#2F4432","what":"One piece at a time: what it is made of, where it sits in the order, what it does in allowed words."},{"key":"Method","colour":"#B08A5A","what":"How-to. Techniques, the order for morning and evening, roller or gua sha, care. Built to be saved."},{"key":"Materials","colour":"#7A8A94","what":"Craft and trust. Saffiano leather, natural jade, food-grade silicone, bamboo-cotton, the certification marks, the warranty."},{"key":"Community","colour":"#B58C86","what":"Creators and customers. Collab posts, reshared rituals, questions answered."},{"key":"House notes","colour":"#6F6F65","what":"Service and order. How to order, delivery, payment, gifting, wholesale. The posts that turn intent into an order."}],"posts":[{"id":"P01","date":"2026-09-25","time":"19:00","phase":0,"format":"Static","pillar":"Ritual","priority":["Awareness"],"title":"Name card","status":"published","hook":"Noyau.","brief":"Published. The static name card that opened the account: the wordmark on cream. Leave it as the first tile of the grid.","asset":"As published.","caption":"As published.","cta":"Follow.","notes":"Nothing to change. When the grid fills, this tile becomes the bottom-right anchor of the launch row.","effort":"done","flex":false},{"id":"P02","date":"2026-09-25","time":"19:30","phase":0,"format":"Reel","pillar":"Ritual","priority":["Awareness"],"title":"Teaser reel one","status":"published","hook":"A quiet skincare ritual.","brief":"Published. The first teaser: ambience, no product detail.","asset":"As published.","caption":"As published.","cta":"Follow.","notes":"Reshare it to stories on 2 October as part of the countdown.","effort":"done","flex":false},{"id":"P03","date":"2026-09-30","time":"12:30","phase":0,"format":"Carousel","pillar":"Ritual","priority":["Awareness"],"title":"Manifesto","status":"scheduled","hook":"The tools, textiles, and order of a skincare ritual worth keeping.","brief":"Going out today. The manifesto carousel: what the house believes about a ritual, one line per slide. Post it at midday so it has the full day before teaser two.","asset":"As prepared.","caption":"If a caption is still needed: A quiet skincare ritual. The tools, textiles, and order of a skincare ritual worth keeping. Noyau arrives on Saturday 3 October. With care, Noyau","cta":"Follow.","notes":"Pin this carousel to the profile until launch day, then replace it with the launch film.","effort":"done","flex":false},{"id":"P04","date":"2026-09-30","time":"19:30","phase":0,"format":"Reel","pillar":"Ritual","priority":["Awareness"],"title":"Teaser reel two","status":"scheduled","hook":"Saturday.","brief":"Going out today. Teaser two: closer to the pieces than teaser one, still without showing the full kit. End on the date.","asset":"As prepared.","caption":"If a caption is still needed: Closer now. Saturday 3 October, at ten in the morning. With care, Noyau","cta":"Follow.","notes":"If the date is not in the edit, put it in the caption and in the first story frame of 1 October.","effort":"done","flex":false},{"id":"P05","date":"2026-10-01","time":"19:00","phase":0,"format":"Static","pillar":"House notes","priority":["Awareness"],"title":"Saturday 3 October","status":"planned","hook":"Saturday 3 October.","brief":"The date, plainly. One image, one line. This is the post people screenshot and the post the countdown sticker points to. Post at seven in the evening, the first payday evening of the month.","asset":"Library: the vanity bag, closed, on a cream surface in soft daylight, 4:5. Alternative: the emblem on forest. Type on image: SATURDAY 3 OCTOBER in the caps style, small, centred low.","caption":"Saturday 3 October. The Ritual Kit arrives at noyauskin.com at ten in the morning. Eight pieces, one order, one bag. With care, Noyau","cta":"Follow, and turn on notifications for Saturday.","notes":"Use the logo without the ® mark. From today the link in bio points to the home page; on Saturday it points to the product page.","effort":"light","flex":false},{"id":"P06","date":"2026-10-02","time":"19:00","phase":0,"format":"Reel","pillar":"Pieces","priority":["Awareness"],"title":"Eight pieces, one order","status":"planned","hook":"Eight pieces. One order.","brief":"Fifteen to twenty seconds. Each piece lands on the same surface for one second in ritual order, then the bag closes over them. On-screen names in caps. Room tone, water, one soft note. The last frame: Tomorrow at ten.","asset":"Library: individual piece stills or short clips on one surface. If the library has them on different surfaces, cut on movement and keep the colour cast consistent. Bag closing clip from the bag footage.","caption":"Eight pieces. One order. Tomorrow at ten in the morning, at noyauskin.com. With care, Noyau","cta":"Tomorrow at ten.","notes":"Order of appearance: bag, brush, headband set, towels, pads, jade roller, gua sha, mask. Same order as the product page. Reshare teaser one to stories the same evening.","effort":"medium","flex":false},{"id":"P07","date":"2026-10-03","time":"10:00","phase":1,"format":"Reel","pillar":"Ritual","priority":["Sales","Awareness"],"title":"Launch film","status":"planned","hook":"The Ritual Kit. Now at noyauskin.com.","brief":"Thirty to forty-five seconds. The full evening ritual in order, hands only, one vanity, natural light. Ends on the bag closing and the wordmark. This is the post that gets pinned to the top of the grid for the month, and the one to boost if any post is boosted.","asset":"Library: the hero ritual footage. Cut to the order of the ritual. Colour: warm neutral. Sound: room tone and water, no music with lyrics.","caption":"The Ritual Kit is here. Eight pieces for a skincare ritual worth keeping, in a Saffiano leather vanity bag. Forest Green or Light Beige. One price, everywhere. Order at noyauskin.com, link in bio. With care, Noyau","cta":"Order at noyauskin.com, link in bio.","notes":"Post at ten sharp, when the countdown sticker ends. Pin it. Switch the link in bio to the product page before posting. Reply to every comment within the hour, as the house. Add alt text: the eight pieces of the Noyau Ritual Kit laid out on a vanity.","effort":"heavy","flex":false},{"id":"P08","date":"2026-10-03","time":"19:00","phase":1,"format":"Carousel","pillar":"Pieces","priority":["Sales"],"title":"Everything inside","status":"planned","hook":"Everything inside.","brief":"Ten slides. Cover: the bag open. Then one slide per piece in product-page order, each with its name and one line. Last slide: Forest Green or Light Beige, noyauskin.com. Pin it beside the launch film.","asset":"Library: the cleanest still of each piece on the same background. Cover: bag open, top down.","caption":"Everything inside the Ritual Kit. The bag, in Saffiano leather. The thermal silicone cleansing brush. The headband and wristbands. Two bamboo-cotton towels. Two pads you wash and use again. The jade roller. The gua sha. The hot and cold compress mask. Sold complete, in Forest Green or Light Beige. Order at noyauskin.com. With care, Noyau","cta":"Order at noyauskin.com.","notes":"Confirm against the fact sheet whether the mirror is part of the kit or sold separately, and add a slide if it is part of the kit. Keep the price off the slide; it is on the site.","effort":"medium","flex":false},{"id":"P09","date":"2026-10-04","time":"12:30","phase":1,"format":"Carousel","pillar":"House notes","priority":["Sales"],"title":"How to order","status":"planned","hook":"How to order.","brief":"Six slides that remove every reason not to order. Choose a colour at noyauskin.com. Pay by card online with no fee. Or pay on delivery, card or cash, with a 2.8% collection fee. Delivery across the UAE, and to Qatar, Saudi Arabia and Kuwait for AED 110, Oman for AED 70, in three to five business days. Questions by DM, WhatsApp or support@noyauskin.com.","asset":"Library: parcel and packaging stills; the bag in both colours. Type-led slides on cream and beige.","caption":"How to order. Choose Forest Green or Light Beige at noyauskin.com. Pay by card online, with no fee, or on delivery by card or cash with a 2.8% collection fee. We deliver across the UAE, and to Qatar, Saudi Arabia, Kuwait and Oman, in three to five business days. Questions are welcome by message. With care, Noyau","cta":"Order at noyauskin.com, link in bio.","notes":"Dependency: the FAQ and Terms on the site still say UAE-only delivery and never show the 2.8% fee. Ask the developer to fix both before this post goes out. Take the UAE delivery fee and time from the fact sheet.","effort":"medium","flex":false},{"id":"P10","date":"2026-10-05","time":"19:30","phase":1,"format":"Reel","pillar":"Pieces","priority":["Sales"],"title":"The bag","status":"planned","hook":"The bag.","brief":"Fifteen to twenty seconds. Saffiano grain in macro, the zip, the bag opening, the pieces in their places, both colours side by side at the end.","asset":"Library: bag macro, bag opening, both colours together.","caption":"The bag. Saffiano leather, in Forest Green or Light Beige. Everything has its place, and the ritual goes where you go. With care, Noyau","cta":"See it at noyauskin.com.","notes":"Ask in stories the same evening: Forest Green or Light Beige. Poll sticker.","effort":"light","flex":false},{"id":"P11","date":"2026-10-06","time":"19:30","phase":1,"format":"Reel","pillar":"Pieces","priority":["Sales"],"title":"The brush","status":"planned","hook":"The brush.","brief":"Twenty to thirty seconds. The thermal silicone cleansing brush on wet skin, the warmth, the hum. One line on what it does, in allowed words. One line on the one-year warranty.","asset":"Library: brush demo footage, silicone macro, the brush on its charger if there is one.","caption":"The brush. Food-grade silicone, gentle warmth, a quiet hum. It cleanses, boosts circulation, and helps what follows absorb. Covered by a one-year warranty. With care, Noyau","cta":"Part of the Ritual Kit at noyauskin.com.","notes":"Never sonic, never antibacterial, never clinically tested. Certification marks (CE, RoHS, FCC, UKCA, EMC) can appear as a small caps line if the fact sheet confirms they apply to the brush.","effort":"medium","flex":false},{"id":"P12","date":"2026-10-07","time":"12:30","phase":1,"format":"Carousel","pillar":"Method","priority":["Growth"],"title":"The order of an evening ritual","status":"planned","hook":"The order of an evening ritual.","brief":"Nine slides. One step per slide with the piece in frame: headband and wristbands on; pads, to remove the day; brush, to cleanse; towel, pressed not rubbed; mask, warm; roller, cool, from the centre outwards; gua sha, up along the jaw and cheek. Last slide: Fewer, better tools. A routine that settles instead of scatters. This is the first post built to be saved.","asset":"Library: one still per step, hands in frame, same vanity. Numbered captions in caps.","caption":"The order of an evening ritual. Headband on. Pads, to take the day off. Brush, to cleanse. Towel, pressed to the skin. Mask, warm. Roller, cool, from the centre outwards. Gua sha, upwards along the jaw and the cheek. Save it for tonight. With care, Noyau","cta":"Save it for tonight.","notes":"Keep instructions gentle and general. Timings and pressure come from the product care sheet, not from memory.","effort":"medium","flex":false},{"id":"P13","date":"2026-10-08","time":"19:30","phase":1,"format":"Collab reel","pillar":"Community","priority":["Creators","Growth"],"title":"Creator wave one, first post","status":"planned","hook":"Creator's own first line.","brief":"The first gifted creator's evening ritual with the kit, in their own home and their own voice. Twenty to forty seconds. Noyau reviews the cut, accepts the Collab invite, and the reel appears on both grids.","asset":"Creator-made. Noyau supplies the kit, the brief and the allowed-words list.","caption":"Creator's caption, with Noyau tagged as co-author. Ask for the words Ritual Kit and noyauskin.com to appear once.","cta":"The creator's own; Noyau adds nothing.","notes":"Wave one kits must leave by 3 October for this slot. The creator brief is due on 8 October in the tracker; pull a short interim version forward to 2 October so wave one has it. No discount codes, ever. Claims stay within the allowed words.","effort":"light","flex":false},{"id":"P14","date":"2026-10-09","time":"19:30","phase":1,"format":"Reel","pillar":"Pieces","priority":["Growth","Sales"],"title":"The jade roller","status":"planned","hook":"Naturally cool to the touch, which is much of the point.","brief":"Fifteen to twenty-five seconds. The roller from the fridge, morning light, rolled from the centre outwards. Depuffing in one line.","asset":"Library: jade macro, roller on ice or in the fridge, rolling footage in daylight.","caption":"The jade roller. Natural jade, kept cool. Rolled from the centre outwards, it depuffs and wakes the skin before the day starts. With care, Noyau","cta":"Part of the Ritual Kit at noyauskin.com.","notes":"Depuffing is an allowed word. Draining and tightening are not.","effort":"light","flex":false},{"id":"P15","date":"2026-10-10","time":"11:00","phase":2,"format":"Reel","pillar":"Method","priority":["Growth"],"title":"Gua sha, in three strokes","status":"planned","hook":"Gua sha, in three strokes.","brief":"Twenty to thirty seconds. Jaw, cheek, brow. Always outwards and upwards, with a little oil. Slow. On-screen: the three strokes named. Saturday late morning is the weekend slot for method reels.","asset":"Library: gua sha footage in daylight; jade macro for the cover.","caption":"Gua sha, in three strokes. Jaw, cheek, brow, always outwards and upwards, with a little oil. Lifting, depuffing, and a moment that belongs to you. With care, Noyau","cta":"Save it, then try it tonight.","notes":"Lifting and depuffing are allowed. Firming is not. Consider posting as a trial reel first so it reaches non-followers before the grid.","effort":"medium","flex":false},{"id":"P16","date":"2026-10-11","time":"12:30","phase":2,"format":"Carousel","pillar":"Method","priority":["Growth"],"title":"Roller or gua sha","status":"planned","hook":"Roller or gua sha.","brief":"Seven slides. The roller: mornings, cool, quick, depuffing. The gua sha: evenings, slower, lifting, contour. Together: roller first, gua sha after. Both are natural jade, both are in the kit. The question everyone asks, answered once and saved many times.","asset":"Library: roller and gua sha stills, side by side and separately.","caption":"Roller or gua sha. The roller for mornings: cool, quick, depuffing. The gua sha for evenings: slower, lifting, along the contours. Both natural jade, both in the Ritual Kit, and if you use both, roller first. With care, Noyau","cta":"Save it. Both are at noyauskin.com.","notes":"Reshare to stories with a This or that poll: roller or gua sha.","effort":"medium","flex":false},{"id":"P17","date":"2026-10-12","time":"19:30","phase":2,"format":"Reel","pillar":"Pieces","priority":["Sales"],"title":"The mask","status":"planned","hook":"One piece, two temperatures.","brief":"Twenty seconds. The hot and cold compress facial steamer mask: warm before cleansing, cool after rolling. The moment of stillness in the ritual.","asset":"Library: mask footage, worn and in hand; steam or condensation macro if the library has it.","caption":"The mask. Warm before you cleanse, cool after you roll. One piece, two temperatures, and the ritual settles. With care, Noyau","cta":"Part of the Ritual Kit at noyauskin.com.","notes":"Check the usage sequence against the product's own instructions before the edit is locked. No claims about pores or treatment.","effort":"medium","flex":false},{"id":"P18","date":"2026-10-13","time":"19:30","phase":2,"format":"Collab reel","pillar":"Community","priority":["Creators","Growth"],"title":"Creator wave one, second post","status":"planned","hook":"Creator's own first line.","brief":"Second gifted creator from wave one. Ask for a morning ritual or a gua sha piece so it does not repeat the first collab.","asset":"Creator-made.","caption":"Creator's caption, Noyau as co-author.","cta":"The creator's own.","notes":"If a third wave-one creator delivers early, hold it for stories and for the 25 October community carousel.","effort":"light","flex":false},{"id":"P19","date":"2026-10-14","time":"12:30","phase":2,"format":"Carousel","pillar":"Materials","priority":["Growth","Awareness"],"title":"Five materials","status":"planned","hook":"Five materials, chosen for how they behave in daily use.","brief":"Seven slides. Saffiano leather, the bag. Natural jade, the roller and the gua sha. Food-grade silicone, the brush. Bamboo-cotton, the towels. The textiles of the headband set and the pads. Last slide: the certification marks as caps chips, and the one-year warranty on the brush.","asset":"Library: material macros. Leather grain, jade, silicone, towel weave.","caption":"Five materials, chosen for how they behave in daily use, against skin, in water, and over years. Saffiano leather. Natural jade. Food-grade silicone. Bamboo-cotton. Sourced for finish and consistency. With care, Noyau","cta":"Read more on the materials page at noyauskin.com.","notes":"Take the exact material names for the headband set and the pads from the fact sheet. Never clean, eco-friendly or sustainable.","effort":"medium","flex":false},{"id":"P20","date":"2026-10-15","time":"19:30","phase":2,"format":"Reel","pillar":"Pieces","priority":["Awareness","Sales"],"title":"The textiles","status":"planned","hook":"The textiles.","brief":"Fifteen to twenty seconds. Headband and wristbands, two towels, two pads. Fold, stack, use. Press, do not rub. Three of the eight pieces in one quiet reel.","asset":"Library: towel pile, headband on, pads with water. Textile macros for the cover.","caption":"The textiles. A headband and wristbands that keep the water where it belongs, two bamboo-cotton towels that press rather than rub, and two pads you wash and use again. With care, Noyau","cta":"Part of the Ritual Kit at noyauskin.com.","notes":"Washing instructions in stories that evening, from the care sheet.","effort":"light","flex":true},{"id":"P21","date":"2026-10-16","time":"12:30","phase":2,"format":"Carousel","pillar":"House notes","priority":["Sales"],"title":"Asked this week","status":"planned","hook":"Asked this week.","brief":"Six slides built from the first two weeks of DMs. Is the kit sold complete. Which colour. Do you deliver to Saudi Arabia. What does the warranty cover. Can I wash the towels. How long does delivery take. Answers in one line each.","asset":"Type-led slides on cream and beige, one piece still per slide.","caption":"Asked this week. Yes, the kit is sold complete. Yes, we deliver to the UAE, Qatar, Saudi Arabia, Kuwait and Oman. The brush carries a one-year warranty. The towels and pads go in the wash. Delivery takes three to five business days. Ask us anything by message. With care, Noyau","cta":"Ask by message, or order at noyauskin.com.","notes":"Replace the questions with the real ones from the inbox. Sensitive-skin questions: answer that the materials were chosen to be gentle and suggest a patch test. Hypoallergenic needs a skin test report on file before it is used.","effort":"medium","flex":false},{"id":"P22","date":"2026-10-17","time":"11:00","phase":3,"format":"Reel","pillar":"Ritual","priority":["Awareness","Growth"],"title":"A morning ritual, in a minute","status":"planned","hook":"A morning ritual, in a minute.","brief":"Forty-five to sixty seconds. Cool roller from the fridge, pads, headband, towel pressed to the skin, then the day. Morning light. Ambience with the pieces in every frame.","asset":"Library: morning footage; window light; roller and pads.","caption":"A morning ritual, in a minute. Cool jade, a headband, a towel pressed to the skin. Then the day. With care, Noyau","cta":"Save it for tomorrow morning.","notes":"Pair with the 7 October evening carousel in stories: morning and evening, the two orders.","effort":"medium","flex":false},{"id":"P23","date":"2026-10-19","time":"19:30","phase":3,"format":"Reel","pillar":"Pieces","priority":["Sales"],"title":"Forest Green or Light Beige","status":"planned","hook":"Forest Green or Light Beige.","brief":"Fifteen seconds. The two bags side by side, opened, then each on its own vanity. The colour decision is the last decision before an order, so make it easy.","asset":"Library: both colours together and separately, same light.","caption":"Forest Green or Light Beige. The same eight pieces, the same order, in the colour you will keep on the vanity. With care, Noyau","cta":"Choose yours at noyauskin.com.","notes":"Stories: poll again, and share the split the next day as the house.","effort":"light","flex":false},{"id":"P24","date":"2026-10-20","time":"19:30","phase":3,"format":"Collab reel","pillar":"Community","priority":["Creators","Awareness"],"title":"Creator wave two, first post","status":"planned","hook":"Seven days with the Ritual Kit.","brief":"First wave-two creator, paid if budget allows, with usage rights so the cut can be reused in stories and, optionally, as an ad. Seven days with the kit: a diary format, thirty to sixty seconds.","asset":"Creator-made, with usage rights in the agreement.","caption":"Creator's caption, Noyau as co-author. Paid partnership label on if paid.","cta":"The creator's own.","notes":"Wave two kits leave by 14 October. Paid posts that mention collagen or acne need an adviser's check under UAE advertising rules; keep paid creators to depuffing, lifting, plumping, circulation and absorption.","effort":"light","flex":false},{"id":"P25","date":"2026-10-21","time":"12:30","phase":3,"format":"Carousel","pillar":"House notes","priority":["Sales"],"title":"For spas, clinics and salons","status":"planned","hook":"For spas, clinics and salons.","brief":"Six slides. The kit in a treatment room. The kit on a reception shelf as a retail piece. Sold wholesale to resell. One price to the public, everywhere. Write to partnerships@noyauskin.com. This is the one wholesale post of the month; the partner deck is due the next day so replies get it at once.","asset":"Library: the kit in a spa-like setting; the bag closed on a shelf; the box.","caption":"For spas, clinics and salons. The Ritual Kit as a treatment-room set, and as a piece your guests take home. Available wholesale, to resell at one public price. Write to partnerships@noyauskin.com. With care, Noyau","cta":"Write to partnerships@noyauskin.com.","notes":"Add a For spas and clinics highlight the same day. Send the partner deck (tracker d28, due 22 October) to every reply. Wholesale terms live in the deck, never in the caption.","effort":"medium","flex":false},{"id":"P26","date":"2026-10-22","time":"19:30","phase":3,"format":"Reel","pillar":"Ritual","priority":["Awareness","Growth"],"title":"The sound of the ritual","status":"planned","hook":"No words. Water, silicone, jade, cotton.","brief":"Thirty seconds. Water running, the brush's hum, jade on skin, a towel unfolding. No voice, no music, one caps line at the end. Pure ambience for reach; the kind of reel that gets sent to a friend.","asset":"Library: the clips with the best natural sound. Record wild sound at the vanity if the library is silent.","caption":"The sound of the ritual. Water. Silicone. Jade. Cotton. With care, Noyau","cta":"Send it to someone who needs a quiet evening.","notes":"Post as a trial reel first if the option is available, then to the grid.","effort":"medium","flex":false},{"id":"P27","date":"2026-10-23","time":"12:30","phase":3,"format":"Carousel","pillar":"House notes","priority":["Sales"],"title":"A ritual, given","status":"planned","hook":"A ritual, given.","brief":"Six slides. The box, the bag, the pieces, a note. The kit as the gift for the season that starts now. Gifting is on the site already; this post makes it visible. Friday midday, before the weekend.","asset":"Library: packaging, the box, ribbon or tissue if used, the bag in both colours.","caption":"A ritual, given. Eight pieces, one bag, one order, sent to someone who deserves a quiet evening. Gifting is available at noyauskin.com. With care, Noyau","cta":"Send one from noyauskin.com.","notes":"Confirm what gifting includes on the site (a note, wrapping, sending to another address) and fix the gifting line typo (becomes, not become) before this post.","effort":"medium","flex":false},{"id":"P28","date":"2026-10-24","time":"11:00","phase":4,"format":"Reel","pillar":"Method","priority":["Growth"],"title":"Care","status":"planned","hook":"Built to a standard, not to a season.","brief":"Thirty seconds. Rinse the brush, wash the textiles, wipe the jade, wipe the leather. Longevity is the case for one price and no discounts, shown rather than argued.","asset":"Library: cleaning and drying footage; if missing, shoot four ten-second clips at the vanity.","caption":"Care. Rinse the brush and let it dry. Wash the towels and pads with your linens. Wipe the jade and the leather with a soft cloth. Built to a standard, not to a season. With care, Noyau","cta":"Save it for the first wash.","notes":"Care instructions from the care sheet only. Add to the How to highlight.","effort":"medium","flex":false},{"id":"P29","date":"2026-10-25","time":"12:30","phase":4,"format":"Carousel","pillar":"Community","priority":["Creators","Growth"],"title":"Your rituals","status":"planned","hook":"Your rituals.","brief":"Six to ten slides of creators' and customers' rituals, reshared with permission, one line from each. If there is not enough by the 23rd, run it as a stories series instead and move the slot to a second Care post.","asset":"Creator and customer content, with written permission in the DM thread.","caption":"Your rituals. Three weeks of the Ritual Kit in your homes, on your vanities, in your evenings. Thank you for letting us share them. With care, Noyau","cta":"Tag @noyauskin to be in the next one.","notes":"Credit every image on the slide. Flex post: it slips to stories if the content is thin.","effort":"medium","flex":true},{"id":"P30","date":"2026-10-27","time":"19:30","phase":4,"format":"Collab reel","pillar":"Community","priority":["Creators","Sales"],"title":"Creator wave two, second post","status":"planned","hook":"Creator's own first line.","brief":"Second wave-two creator. Ask for a piece-led reel: how they use the gua sha, or the brush, so it sells a piece as well as the mood. Payday week.","asset":"Creator-made.","caption":"Creator's caption, Noyau as co-author.","cta":"The creator's own.","notes":"Reshare to stories with the link sticker the same evening.","effort":"light","flex":false},{"id":"P31","date":"2026-10-28","time":"12:30","phase":4,"format":"Carousel","pillar":"Method","priority":["Sales","Growth"],"title":"What the ritual does","status":"planned","hook":"What the ritual does.","brief":"Eight slides, one per piece, the benefit in allowed words only. Brush: cleanses, boosts circulation and absorption. Roller: depuffing. Gua sha: lifting, plumping. Mask: warms, then cools. Textiles: keep the ritual gentle and tidy. Bag: keeps it together. The strongest conversion post of the month, placed on payday.","asset":"Library: one still per piece; type-led with the piece in frame.","caption":"What the ritual does. The brush cleanses and boosts circulation and absorption. The roller depuffs. The gua sha lifts and plumps. The mask warms, then cools. The textiles keep it gentle. The bag keeps it together. All eight, at noyauskin.com. With care, Noyau","cta":"Order at noyauskin.com, link in bio.","notes":"Only the allowed benefit words. Leave collagen and acne out of organic posts until the adviser has confirmed the wording. Consider boosting this post for the payday window.","effort":"medium","flex":false},{"id":"P32","date":"2026-10-29","time":"19:30","phase":4,"format":"Reel","pillar":"Ritual","priority":["Awareness"],"title":"The ritual, in one take","status":"planned","hook":"One take. No cuts.","brief":"Forty-five to sixty seconds, a single continuous shot of the evening ritual. Locked camera, natural sound. The calm is the point, and the length holds watch time.","asset":"Library: the longest unbroken ritual take. If none exists, this is the one shot worth doing in the month.","caption":"The ritual, in one take. Nothing added. With care, Noyau","cta":"Watch to the end.","notes":"Cover from the last frame, the closed bag.","effort":"medium","flex":false},{"id":"P33","date":"2026-10-30","time":"12:30","phase":4,"format":"Reel","pillar":"House notes","priority":["Sales"],"title":"From the house to your door","status":"planned","hook":"From the house to your door.","brief":"Twenty seconds. The parcel packed, handed to the courier, arriving, opened. Three to five business days across the UAE and the GCC. Payday Friday, the last order push of the month.","asset":"Library: packing footage, the box, the bag emerging. Film the handover if the library lacks it.","caption":"From the house to your door. Across the UAE, and to Qatar, Saudi Arabia, Kuwait and Oman, in three to five business days. Order at noyauskin.com. With care, Noyau","cta":"Order at noyauskin.com, link in bio.","notes":"Stories the same day: How to order carousel reshared, link sticker, WhatsApp sticker.","effort":"light","flex":false},{"id":"P34","date":"2026-10-31","time":"11:00","phase":4,"format":"Carousel","pillar":"Community","priority":["Awareness"],"title":"October, kept","status":"planned","hook":"October, kept.","brief":"Eight slides. One per piece, each with a line from the month: the question most asked about it, or the creator moment that featured it. Last slide: the ritual continues in November, with the how-to series every week. No sales in November, so this post closes the launch and opens the journal.","asset":"Library: the best still of each piece from the month's posts.","caption":"October, kept. Eight pieces, four weeks, and a ritual that is now in your homes. Thank you. The how-to series continues every week in November. With care, Noyau","cta":"Follow along for the how-to series.","notes":"Update the pinned posts: keep the launch film, replace Everything inside with What the ritual does.","effort":"medium","flex":false}],"priorities":[{"key":"Sales","name":"Direct sales","how":"One product, one price, no discounts. So sales come from removing friction and repeating the path to order: a How to order post in launch week and again at payday, a benefits post in allowed words, a gifting post as Q4 opens, and a link sticker in stories every day from 3 October. Sales posts sit on the two payday windows (1–4 and 27–31 October).","posts":["P07","P08","P09","P10","P11","P17","P21","P22","P26","P30","P32"]},{"key":"Awareness","name":"Brand awareness","how":"Reels carry the ambience. The launch film, the eight-piece sequence, the sound of the ritual and the one-take evening ritual are built to be watched by people who have never heard the name. Covers alternate cream, forest and beige so the grid reads as one house.","posts":["P01","P02","P03","P04","P05","P06","P07","P20","P25","P31","P34"]},{"key":"Growth","name":"Audience growth","how":"Carousels earn saves and repeat delivery, so the method series (the order of a ritual, roller or gua sha, what the ritual does, care) is where new followers come from. Every reel opens with a specific first line, and captions carry search terms: skincare ritual, gua sha, jade roller, cleansing brush, Dubai, UAE.","posts":["P12","P13","P14","P15","P16","P18","P19","P27","P33"]},{"key":"Creators","name":"Creator collaborations","how":"Two gifting waves, each landing two Collab posts on Noyau's grid. Collab posts reach both audiences and cost Noyau only an approval. Wave one is dispatched with the launch, wave two mid-month. One or two paid creators in wave two, with usage rights.","posts":["P13","P18","P23","P29","P28"]}],"stories":{"2026-09-25":["Name card and teaser one reshared to stories as posted."],"2026-09-30":["Manifesto carousel reshared, one slide, tap-through prompt.","Teaser two reshared in the evening.","Question sticker: What does your evening ritual look like now."],"2026-10-01":["The date: SATURDAY 3 OCTOBER on cream, countdown sticker set to Saturday 10:00.","The bag, closed, five-second clip, no text.","Answers to yesterday's question, three replies shared as the house."],"2026-10-02":["Tomorrow at ten. One frame.","Teaser one reshared.","Eight pieces reel reshared with the countdown sticker."],"2026-10-03":["10:00 It is here. The launch film reshared, link sticker to the product page.","11:00 The bag open, both colours, poll: Forest Green or Light Beige.","13:00 Three pieces, three frames, each with a one-line note.","16:00 Everything inside preview, link sticker.","19:00 Carousel reshared.","21:00 A thank-you from the house, no numbers, and the first parcels packed if there are any."],"2026-10-04":["This week in the house: the six posts coming, one frame.","How to order carousel reshared, link sticker.","Question sticker: Ask the house anything about ordering."],"2026-10-05":["The bag reel reshared.","Poll: Forest Green or Light Beige.","Link sticker frame: the product page."],"2026-10-06":["Brush reel reshared.","Quiz sticker: which material is the brush made of. Answer: food-grade silicone.","Link sticker frame."],"2026-10-07":["Order of an evening ritual, three slides reshared with Save this.","Ask the house question sticker (weekly).","Link sticker frame."],"2026-10-08":["Answers to Ask the house, three to five frames.","Creator collab reshared with the creator tagged.","Link sticker frame."],"2026-10-09":["Jade roller reshared.","Kept this week: the week's mentions and tags reshared.","First parcels have left the house, if true. Link sticker."],"2026-10-10":["Gua sha reel reshared.","Three-frame method recap: jaw, cheek, brow.","Link sticker frame."],"2026-10-11":["This week in the house.","Roller or gua sha, poll sticker.","Link sticker frame."],"2026-10-12":["Mask reel reshared.","Quiz: warm before cleansing or after. Answer: before.","Link sticker frame."],"2026-10-13":["Creator collab reshared.","Poll: morning ritual or evening ritual.","Link sticker frame."],"2026-10-14":["Materials carousel reshared, two slides.","Ask the house question sticker.","Link sticker frame."],"2026-10-15":["Textiles reel reshared.","How to wash the towels and pads, two frames from the care sheet.","Answers to Ask the house."],"2026-10-16":["Asked this week reshared.","Kept this week: creator and customer tags.","Link sticker frame."],"2026-10-17":["Morning ritual reel reshared.","Morning and evening, the two orders, side by side.","Link sticker frame."],"2026-10-18":["Stories only today. This week in the house.","The details: stitching, the emblem, the zip, three close-ups from the library.","Question sticker: Which piece do you reach for first."],"2026-10-19":["Colours reel reshared.","Poll: Forest Green or Light Beige, and yesterday's answers shared.","Link sticker frame."],"2026-10-20":["Creator collab reshared, paid partnership label if paid.","The creator's favourite piece, one frame.","Link sticker frame."],"2026-10-21":["Spas and clinics carousel reshared.","New highlight: For spas and clinics.","Ask the house question sticker."],"2026-10-22":["Sound of the ritual reshared with sound-on prompt.","Answers to Ask the house.","Link sticker frame."],"2026-10-23":["Gifting carousel reshared.","Kept this week.","Link sticker frame."],"2026-10-24":["Care reel reshared.","Four care frames, one per material.","Link sticker frame."],"2026-10-25":["This week in the house.","Your rituals, three reshares with credit.","Question sticker: What has the ritual changed for you."],"2026-10-26":["Stories only today. Answers to yesterday's question.","The bag packed for travel, one clip.","Link sticker frame."],"2026-10-27":["Creator collab reshared.","Poll: gua sha or brush, which would you not give up.","Link sticker frame."],"2026-10-28":["What the ritual does, three slides reshared.","Ask the house question sticker.","Link sticker frame, WhatsApp sticker."],"2026-10-29":["One take reel reshared.","Answers to Ask the house.","Link sticker frame."],"2026-10-30":["From the house to your door reshared.","How to order carousel reshared, link sticker.","Kept this week."],"2026-10-31":["October, kept reshared.","Thank you from the house, one frame.","November: the how-to series continues, one frame."]},"storiesPlaybook":{"daily":["One ritual frame from the library with no text, or one line.","One link sticker frame to the product page, every day from 3 October.","The day's feed post reshared within an hour of posting."],"weekly":[{"day":"Sunday","name":"This week in the house","what":"One frame listing the week's posts, so followers know what is coming."},{"day":"Wednesday","name":"Ask the house","what":"Question sticker. Answers go out on Thursday as the house, never as a founder."},{"day":"Friday","name":"Kept this week","what":"Reshare every tag, mention and creator story from the week, with credit."},{"day":"Saturday","name":"Method recap","what":"Three frames restating the week's how-to, for saving."}],"highlights":["The Kit","The Pieces","How to","Order and delivery","Creators","For spas and clinics"],"rules":["Three to six frames a day. Never more than eight, except launch day.","Polls and questions at least three times a week; they keep stories at the front of the tray.","Interactive stickers use the house voice: Forest Green or Light Beige, not Which one do you love.","Answers to questions are written as the house. No face, no name."]},"timing":{"slots":[{"slot":"Reels, Sunday to Thursday","time":"19:30","why":"After work and dinner, before the late scroll. The highest reel completion window for UAE lifestyle audiences."},{"slot":"Carousels, Sunday to Friday","time":"12:30","why":"Lunch break. Carousels are read, not watched, and midday reading is when saves happen."},{"slot":"Weekend reels, Saturday","time":"11:00","why":"A slow weekend morning, when a ritual reel is watched rather than skipped."},{"slot":"Launch day","time":"10:00 and 19:00","why":"Ten when the countdown ends; seven when the evening audience arrives."},{"slot":"Stories","time":"Spread 09:00 to 21:00","why":"Never all at once. The link sticker frame goes out at 20:00."}],"cadence":["Prelude: two posts already out, two today, one each on 1 and 2 October.","Launch week: one post a day, two on launch day.","10 to 31 October: six feed posts a week, of which one or two are creator-made Collab reels. One day a week is stories only.","Two posts a week are marked flex: if the week gets heavy, they slip to stories without breaking the plan."],"hashtags":{"house":["#noyauskin","#skincareritual","#skincaretools","#ritualkit"],"rotate":["#guasha","#jaderoller","#cleansingbrush","#facialtools","#dubaiskincare","#uaebeauty","#quietluxury","#eveningritual"],"rule":"Three to five per post: two from the house set, one to three that match the piece or the method. Hashtags go at the end of the caption, after the sign-off."},"keywords":["skincare ritual","skincare tools","gua sha","jade roller","cleansing brush","vanity bag","Dubai","UAE","GCC delivery"]},"voice":{"rules":["British spelling. No exclamation marks. No emoji.","The brand speaks as a house. No founder, no I, no behind-the-scenes face.","Short declarative lines, often with a full stop. Concrete nouns over adjectives: Saffiano leather, natural jade, food-grade silicone.","One price, everywhere. Never a discount, a sale, a code or a countdown to a price.","Sign off every caption and DM: With care, Noyau","Logo without the ® mark until the filing is confirmed."],"allowed":["depuffing","lifting","plumping","boosts collagen","boosts circulation","boosts absorption","helps with acne treatment (never treats acne)","hypoallergenic (once a skin test report is on file)","dermatologist-approved (only occasionally, and only with documented approval)"],"avoid":["anti-ageing","firming","tightening","draining","detox","clinically tested","antibacterial","glow","miracle","transform","must-have","holy grail","sonic","clean","eco-friendly","sustainable","discount, sale, offer, code"],"claims":["Collagen and acne wording reads as a health claim under UAE advertising rules. Keep both out of paid posts until an adviser confirms the wording, and out of organic posts in October.","Dermatologist-approved needs a real dermatologist's documented approval before any creator uses it.","Hypoallergenic needs a skin test report on file."]},"wholesale":[{"when":"21 October","what":"Feed carousel P25, For spas, clinics and salons, with partnerships@noyauskin.com as the only call to action."},{"when":"21 October","what":"New highlight, For spas and clinics, with the carousel slides and a DM prompt."},{"when":"22 October","what":"Partner deck final (tracker d28). Every reply to P25 receives it the same day."},{"when":"22–30 October","what":"Direct outreach by DM and email to ten spas and clinics in Dubai and Abu Dhabi, with the deck. Three follow-ups spaced four days apart."},{"when":"DM reply","what":"Thank you for writing. The Ritual Kit is available wholesale to resell at one public price. The partner deck is attached; we would be glad to send a kit for your treatment room to try. With care, Noyau"}]};
+(function () {
+  const { meta, priorities, phases, pillars, formats, posts, stories, storiesPlaybook, creators, wholesale, voice, timing, measurement, checklist, dependencies } = DATA;
+  const $ = (s, r = document) => r.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") n.className = v;
+      else if (k === "html") n.innerHTML = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (v !== null && v !== undefined) n.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid !== null && kid !== undefined) n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return n;
+  };
+  const pillarVar = { "Ritual": "var(--pil-ritual)", "Pieces": "var(--pil-pieces)", "Method": "var(--pil-method)", "Materials": "var(--pil-materials)", "Community": "var(--pil-community)", "House notes": "var(--pil-house)" };
+  const formatMark = Object.fromEntries(formats.map(f => [f.key, f.mark]));
+  const STATUS = ["planned", "drafted", "scheduled", "published"];
+  const statusVar = { planned: "var(--st-planned)", drafted: "var(--st-drafted)", scheduled: "var(--st-scheduled)", published: "var(--st-published)" };
+  const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const d = s => { const [y, m, dd] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, dd)); };
+  const iso = dt => dt.toISOString().slice(0, 10);
+  const fmtDay = s => { const dt = d(s); return `${DOW[(dt.getUTCDay() + 6) % 7]} ${dt.getUTCDate()} ${MON[dt.getUTCMonth()].slice(0, 3)}`; };
+  const fmtLong = s => { const dt = d(s); return `${["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][(dt.getUTCDay() + 6) % 7]} ${dt.getUTCDate()} ${MON[dt.getUTCMonth()]}`; };
+  const byDate = {};
+  posts.forEach(p => (byDate[p.date] ||= []).push(p));
+  const postById = Object.fromEntries(posts.map(p => [p.id, p]));
+
+  // state
+  const state = { view: "month", pillar: new Set(), format: new Set(), priority: new Set(), status: {}, canEdit: null, open: null };
+  const prefKey = "noyau-cal-view";
+  try { const v = localStorage.getItem(prefKey); if (v === "list" || v === "month") state.view = v; } catch (e) {}
+  if (window.innerWidth < 760) state.view = "list";
+
+  const statusOf = p => (state.status[p.id] && state.status[p.id].s) || p.status || "planned";
+  const visible = p => (!state.pillar.size || state.pillar.has(p.pillar)) && (!state.format.size || state.format.has(p.format)) && (!state.priority.size || p.priority.some(x => state.priority.has(x)));
+
+  // header
+  $("#lede").textContent = meta.summary;
+  const counts = { total: posts.length };
+  formats.forEach(f => counts[f.key] = posts.filter(p => p.format === f.key).length);
+  const collabs = counts["Collab reel"];
+  $("#facts").append(
+    el("span", {}, el("b", {}, counts.total), " feed posts"),
+    el("span", {}, el("b", {}, counts.Reel), " reels"),
+    el("span", {}, el("b", {}, counts.Carousel), " carousels"),
+    el("span", {}, el("b", {}, counts.Static), " statics"),
+    el("span", {}, el("b", {}, collabs), " creator Collab reels"),
+    el("span", {}, el("b", {}, Object.keys(stories).length), " days of stories"),
+    el("span", {}, "Launch ", el("b", {}, "Saturday 3 October, 10:00")),
+    el("span", {}, "Updated ", el("b", {}, meta.updated)),
+  );
+  $("#foot").textContent = `${meta.title} · ${meta.range} · times in ${meta.timezone} · updated ${meta.updated}`;
+  $("#tz").textContent = `All times are ${meta.timezone}.`;
+
+  // filters
+  function filterRow(rootSel, items, set, colourFn) {
+    const root = $(rootSel);
+    items.forEach(it => {
+      const b = el("button", { type: "button", "aria-pressed": "false", onclick: () => { set.has(it) ? set.delete(it) : set.add(it); b.setAttribute("aria-pressed", set.has(it)); render(); } },
+        colourFn ? el("span", { class: "dot", style: `background:${colourFn(it)}` }) : null, it);
+      root.append(b);
+    });
+  }
+  filterRow("#f-pillar", pillars.map(p => p.key), state.pillar, k => pillarVar[k]);
+  filterRow("#f-format", formats.map(f => f.key), state.format, null);
+  filterRow("#f-priority", priorities.map(p => p.key), state.priority, null);
+  $("#v-month").addEventListener("click", () => setView("month"));
+  $("#v-list").addEventListener("click", () => setView("list"));
+  function setView(v) { state.view = v; try { localStorage.setItem(prefKey, v); } catch (e) {} render(); }
+
+  // month grid
+  function renderMonth() {
+    const root = $("#month"); root.innerHTML = "";
+    DOW.forEach(x => root.append(el("div", { class: "dow" }, x)));
+    const start = d(meta.start), end = d(meta.end);
+    const first = new Date(start); first.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7));
+    const last = new Date(end); last.setUTCDate(last.getUTCDate() + (6 - ((last.getUTCDay() + 6) % 7)));
+    const todayIso = iso(new Date(Date.now() + 4 * 3600 * 1000));
+    for (let cur = new Date(first); cur <= last; cur.setUTCDate(cur.getUTCDate() + 1)) {
+      const key = iso(cur);
+      const inRange = cur >= start && cur <= end;
+      const cell = el("div", { class: "day" + (inRange ? "" : " out") + (key === meta.launch ? " launch" : "") + (key === todayIso ? " today" : ""), role: "group", "aria-label": fmtLong(key) });
+      const dn = el("div", { class: "dn" }, el("b", {}, cur.getUTCDate()), (cur.getUTCDate() === 1 || key === meta.start) ? el("span", {}, MON[cur.getUTCMonth()].slice(0, 3)) : null);
+      cell.append(dn);
+      if (key === meta.launch) cell.append(el("div", { class: "tag" }, "Launch"));
+      if (!inRange) { root.append(cell); continue; }
+      const dayPosts = byDate[key] || [];
+      dayPosts.forEach(p => cell.append(postChip(p)));
+      if (stories[key]) {
+        const n = stories[key].length;
+        cell.append(el("button", { type: "button", class: "stories-line", onclick: () => openDay(key) }, dayPosts.length ? `Stories · ${n} frames` : `Stories only · ${n} frames`));
+      }
+      root.append(cell);
+    }
+  }
+  function postChip(p) {
+    const st = statusOf(p);
+    return el("button", { type: "button", class: "post" + (visible(p) ? "" : " dim"), style: `--pc:${pillarVar[p.pillar]};--sc:${statusVar[st]}`, onclick: () => openPost(p.id), "aria-label": `${p.id} ${p.title}` },
+      el("span", { class: "m" }, formatMark[p.format]),
+      el("span", { class: "t" }, p.title),
+      el("span", { class: "s" }, el("i"), `${p.time} · ${st}`));
+  }
+
+  // list view
+  function renderList() {
+    const root = $("#list"); root.innerHTML = "";
+    phases.forEach(ph => {
+      root.append(el("div", { class: "ph" }, el("div", { class: "eyebrow" }, `Phase ${ph.n} · ${ph.dates}`), el("h3", {}, ph.name), el("p", {}, ph.goal)));
+      const s = d(ph.start), e = d(ph.end);
+      for (let cur = new Date(s); cur <= e; cur.setUTCDate(cur.getUTCDate() + 1)) {
+        const key = iso(cur);
+        const dayPosts = byDate[key] || [];
+        if (!dayPosts.length && !stories[key]) continue;
+        const dl = el("div", { class: "dl" }, el("b", {}, `${cur.getUTCDate()} ${MON[cur.getUTCMonth()].slice(0, 3)}`), el("span", {}, ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][(cur.getUTCDay() + 6) % 7]), key === meta.launch ? el("span", { class: "tag" }, "Launch day") : null);
+        const items = el("div", { class: "items" });
+        dayPosts.forEach(p => items.append(postCard(p)));
+        if (stories[key]) items.append(el("div", { class: "stories-only" }, el("b", {}, dayPosts.length ? "Stories. " : "Stories only. "), stories[key].join(" · ")));
+        root.append(el("div", { class: "dayrow" }, dl, items));
+      }
+    });
+  }
+  function postCard(p) {
+    const st = statusOf(p);
+    const dl = el("dl", {});
+    const row = (k, v) => { if (v) dl.append(el("dt", {}, k), el("dd", {}, v)); };
+    row("Brief", p.brief); row("Asset", p.asset); row("Caption", p.caption); row("Call to order", p.cta); row("Notes", p.notes);
+    return el("article", { class: "card" + (visible(p) ? "" : " dim"), style: `--pc:${pillarVar[p.pillar]};--sc:${statusVar[st]}`, id: "card-" + p.id },
+      el("div", { class: "meta" }, el("span", {}, p.id), el("span", {}, `${p.time}`), el("span", {}, p.format), el("span", {}, p.pillar), el("span", {}, p.priority.join(" · ")), el("span", { class: "st" }, el("i"), st), p.flex ? el("span", {}, "flex") : null, el("span", {}, `effort: ${p.effort}`)),
+      el("h4", {}, p.title),
+      el("div", { class: "hook" }, p.hook),
+      dl,
+      el("button", { type: "button", class: "open", onclick: () => openPost(p.id) }, "Open with stories and status"));
+  }
+
+  // progress
+  function renderProgress() {
+    const c = { planned: 0, drafted: 0, scheduled: 0, published: 0 };
+    posts.forEach(p => c[statusOf(p)]++);
+    const root = $("#progress"); root.innerHTML = "";
+    STATUS.forEach(s => root.append(el("span", { class: "k" }, el("span", { class: "dot", style: `background:${statusVar[s]}` }), `${c[s]} ${s}`)));
+    const note = state.canEdit === false ? "Statuses are read-only for you." : state.canEdit === null ? "" : "";
+    if (note) root.append(el("span", { class: "note" }, note));
+  }
+
+  function render() {
+    $("#v-month").setAttribute("aria-pressed", state.view === "month");
+    $("#v-list").setAttribute("aria-pressed", state.view === "list");
+    $("#month").hidden = state.view !== "month";
+    $("#list").hidden = state.view !== "list";
+    if (state.view === "month") renderMonth(); else renderList();
+    renderProgress();
+  }
+
+  // drawer
+  let toastT;
+  function toast(msg) { const t = el("div", { class: "toast" }, msg); document.body.append(t); clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 1800); }
+  function closeDrawer() { $("#drawer-root").innerHTML = ""; state.open = null; if (location.hash) history.replaceState(null, "", location.pathname + location.search); }
+  function openDay(key) {
+    const root = $("#drawer-root"); root.innerHTML = "";
+    const body = el("aside", { class: "drawer", role: "dialog", "aria-label": `Stories, ${fmtLong(key)}` },
+      el("div", { class: "bar-top" }, el("div", { class: "eyebrow" }, fmtLong(key)), el("button", { type: "button", class: "close", onclick: closeDrawer }, "Close")),
+      el("h3", {}, (byDate[key] || []).length ? "Stories" : "Stories only"),
+      el("ol", { class: "stories" }, (stories[key] || []).map(s => el("li", {}, s))),
+      (byDate[key] || []).length ? el("dl", {}, el("dt", {}, "Feed posts today"), el("dd", {}, el("div", { class: "chips" }, (byDate[key] || []).map(p => el("button", { type: "button", onclick: () => openPost(p.id) }, `${p.id} · ${p.title}`))))) : null);
+    root.append(el("div", { class: "scrim", onclick: closeDrawer }), body);
+    body.querySelector(".close").focus();
+  }
+  function openPost(id) {
+    const p = postById[id]; if (!p) return;
+    state.open = id;
+    history.replaceState(null, "", "#" + id);
+    const root = $("#drawer-root"); root.innerHTML = "";
+    const idx = posts.indexOf(p);
+    const st = statusOf(p);
+    const dl = el("dl", {});
+    const row = (k, v, cls) => { if (v) dl.append(el("dt", {}, k), el("dd", { class: cls || "" }, v)); };
+    row("Brief", p.brief);
+    row("Asset from the library", p.asset);
+    row("Caption draft", p.caption, "cap");
+    const copy = el("button", { type: "button", class: "copy", onclick: () => { const t = p.caption; (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Caption copied"), () => { const r = document.createRange(); r.selectNodeContents(dl.querySelector(".cap")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Select and copy"); }); } }, "Copy caption");
+    dl.append(el("dd", {}, copy));
+    row("Call to order", p.cta);
+    row("Notes and compliance", p.notes);
+    if (stories[p.date]) dl.append(el("dt", {}, "Stories that day"), el("dd", {}, el("ol", { class: "stories" }, stories[p.date].map(s => el("li", {}, s)))));
+    const statusBox = el("div", { class: "status" }, el("label", { for: "st-" + p.id }, "Status"));
+    if (state.canEdit === false || !state.db) {
+      statusBox.append(el("div", { class: "ro" }, el("span", { class: "dot", style: `background:${statusVar[st]};margin-right:8px;position:relative;top:-1px` }), st, state.db ? " · read-only for you" : " · saved statuses appear when the page is opened on claude.ai"));
+    } else {
+      const sel = el("select", { id: "st-" + p.id });
+      STATUS.forEach(s => sel.append(el("option", { value: s, selected: s === st ? "" : null }, s)));
+      sel.addEventListener("change", async () => {
+        const s = sel.value; sel.disabled = true;
+        try { await state.db.doc("status/" + p.id).set({ s, at: new Date().toISOString() }); toast(`${p.id} marked ${s}`); }
+        catch (e) { toast("Could not save; try again"); sel.value = statusOf(p); }
+        sel.disabled = false;
+      });
+      statusBox.append(sel);
+    }
+    const body = el("aside", { class: "drawer", role: "dialog", "aria-label": `${p.id} ${p.title}` },
+      el("div", { class: "bar-top" }, el("div", { class: "eyebrow" }, `${p.id} · ${fmtLong(p.date)} · ${p.time}`), el("button", { type: "button", class: "close", onclick: closeDrawer }, "Close")),
+      el("h3", {}, p.title),
+      el("div", { class: "hook" }, p.hook),
+      el("div", { class: "meta" },
+        el("span", { class: "pill" }, el("span", { class: "dot", style: `background:${pillarVar[p.pillar]}` }), p.pillar),
+        el("span", { class: "pill" }, p.format),
+        el("span", { class: "pill" }, "Serves: " + p.priority.map(k => (priorities.find(x => x.key === k) || {}).name || k).join(", ")),
+        el("span", { class: "pill" }, `Phase ${p.phase} · ${phases[p.phase].name}`),
+        el("span", { class: "pill" }, `Effort: ${p.effort}`),
+        p.flex ? el("span", { class: "pill" }, "Flex: may slip to stories") : null),
+      statusBox,
+      dl,
+      el("div", { class: "nav2" },
+        el("button", { type: "button", disabled: idx === 0 ? "" : null, onclick: () => openPost(posts[idx - 1].id) }, idx > 0 ? `Previous · ${posts[idx - 1].id}` : "Previous"),
+        el("button", { type: "button", disabled: idx === posts.length - 1 ? "" : null, onclick: () => openPost(posts[idx + 1].id) }, idx < posts.length - 1 ? `Next · ${posts[idx + 1].id}` : "Next")));
+    root.append(el("div", { class: "scrim", onclick: closeDrawer }), body);
+    body.scrollTop = 0;
+    body.querySelector(".close").focus();
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && state.open !== null) closeDrawer(); else if (e.key === "Escape") $("#drawer-root").innerHTML = ""; });
+
+  // sections
+  const prioRoot = $("#priorities-grid");
+  priorities.forEach(pr => {
+    const ids = posts.filter(p => p.priority.includes(pr.key)).map(p => p.id);
+    prioRoot.append(el("div", {}, el("h3", {}, pr.name), el("p", {}, pr.how), el("div", { class: "chips" }, ids.map(id => el("button", { type: "button", onclick: () => openPost(id) }, id)))));
+  });
+  const phRoot = $("#phases-list");
+  const total = (d(meta.end) - d(meta.start)) / 864e5 + 1;
+  phases.forEach(ph => {
+    const s = (d(ph.start) - d(meta.start)) / 864e5, len = (d(ph.end) - d(ph.start)) / 864e5 + 1;
+    const n = posts.filter(p => p.phase === ph.n).length;
+    phRoot.append(el("div", { class: "phase" },
+      el("div", {}, el("div", { class: "n" }, String(ph.n)), el("div", { class: "d" }, ph.dates), el("div", { class: "d" }, `${n} feed posts`)),
+      el("div", {}, el("h3", {}, ph.name), el("p", {}, ph.goal)),
+      el("div", { class: "bar", "aria-hidden": "true" }, el("i", { style: `left:${(s / total) * 100}%;width:${(len / total) * 100}%` }))));
+  });
+  const legend = $("#pillars-legend");
+  pillars.forEach(pl => legend.append(el("div", {}, el("span", { class: "dot", style: `background:${pillarVar[pl.key]}` }), el("b", {}, pl.key), el("p", {}, pl.what))));
+  const fl = $("#formats-legend");
+  formats.forEach(f => fl.append(el("div", {}, el("span", { class: "m" }, f.mark), el("b", {}, f.key), el("p", {}, f.note))));
+
+  const li = (root, arr) => arr.forEach(x => $(root).append(el("li", {}, x)));
+  li("#st-daily", storiesPlaybook.daily); li("#st-rules", storiesPlaybook.rules);
+  const stw = $("#st-weekly"); stw.append(el("tr", {}, el("th", {}, "Day"), el("th", {}, "Fixture"), el("th", {}, "What")));
+  storiesPlaybook.weekly.forEach(w => stw.append(el("tr", {}, el("td", { class: "k" }, w.day), el("td", {}, w.name), el("td", {}, w.what))));
+  storiesPlaybook.highlights.forEach(h => $("#st-high").append(el("span", {}, h)));
+
+  li("#cr-principles", creators.principles); li("#cr-brief", creators.brief);
+  const cw = $("#cr-waves");
+  creators.waves.forEach(w => { const box = el("div", { class: "wave" }, el("h4", {}, w.name)); w.steps.forEach(s => box.append(el("div", { class: "step" }, el("b", {}, s.when), el("span", {}, s.what)))); cw.append(box); });
+  const wh = $("#wh-steps");
+  wholesale.forEach(s => wh.append(el("div", { class: "step" }, el("b", {}, s.when), el("span", {}, s.what))));
+
+  li("#vo-rules", voice.rules); li("#vo-claims", voice.claims);
+  voice.allowed.forEach(w => $("#vo-ok").append(el("span", {}, w)));
+  voice.avoid.forEach(w => $("#vo-no").append(el("span", {}, w)));
+
+  const ts = $("#ti-slots"); ts.append(el("tr", {}, el("th", {}, "Slot"), el("th", {}, "Time"), el("th", {}, "Why")));
+  timing.slots.forEach(s => ts.append(el("tr", {}, el("td", { class: "k" }, s.slot), el("td", { style: "white-space:nowrap" }, s.time), el("td", {}, s.why))));
+  li("#ti-cadence", timing.cadence);
+  timing.hashtags.house.forEach(h => $("#ti-house").append(el("span", {}, h)));
+  timing.hashtags.rotate.forEach(h => $("#ti-rotate").append(el("span", {}, h)));
+  $("#ti-rule").textContent = timing.hashtags.rule;
+  timing.keywords.forEach(k => $("#ti-keys").append(el("span", {}, k)));
+
+  $("#me-weekly").textContent = measurement.weekly;
+  const mt = $("#me-table"); mt.append(el("tr", {}, el("th", {}, "Priority"), el("th", {}, "Metric"), el("th", {}, "Where"), el("th", {}, "Working target")));
+  measurement.metrics.forEach(m => mt.append(el("tr", {}, el("td", { class: "k" }, m.priority), el("td", {}, m.metric), el("td", {}, m.where), el("td", {}, m.target))));
+  checklist.forEach(c => $("#ck-list").append(el("li", {}, c)));
+  const dt = $("#dp-table"); dt.append(el("tr", {}, el("th", {}, "Item"), el("th", {}, "Needed"), el("th", {}, "Who")));
+  dependencies.forEach(x => dt.append(el("tr", {}, el("td", {}, x.item), el("td", { style: "white-space:nowrap" }, x.needed), el("td", {}, x.who))));
+
+  render();
+  const h = (location.hash || "").replace("#", "");
+  if (postById[h]) openPost(h);
+
+  // shared statuses
+  (async () => {
+    if (!window.claude || !window.claude.use) return;
+    const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+    if (!db) return;
+    state.db = db;
+    try { state.canEdit = user ? await user.canEdit() : false; } catch (e) { state.canEdit = false; }
+    db.collection("status").onSnapshot(snap => {
+      const next = {};
+      snap.docs.forEach(doc => { if (doc.exists) next[doc.id] = doc.data(); });
+      state.status = next;
+      render();
+      if (state.open && $("#drawer-root .drawer")) { const sel = $("#st-" + state.open); if (sel && document.activeElement !== sel) sel.value = statusOf(postById[state.open]); }
+    }, err => { console.warn("status subscription", err); });
+    if (state.open) openPost(state.open);
+  })();
+})();
+</script>
