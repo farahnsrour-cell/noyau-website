@@ -15,7 +15,7 @@ Eight Instagram statics and two statistic cards (1080 × 1350) for 8 to 28 Octob
 | Sun 25 Oct | `final/S5` | The details (photography-led editorial) | Sales |
 | Wed 28 Oct | `final/S7` | A familiar ritual, wherever you stay (home / away diptych) | Awareness |
 
-`final/noyau-statics-october.pdf` holds all ten pages for Canva (`-v4.pdf` is the copy Canva imported).
+`final/noyau-statics-october.pdf` holds all ten pages for Canva (`-v5.pdf` is the copy Canva imported; its UK-study page is flattened to an image because Canva reflows that page).
 
 `archive-v1/` keeps the first set, including three finished pages not in the current plan: A ritual, given (gifting, old S5), the 8 statistic card (old S6, now a carousel idea) and Sold complete. One price, everywhere (old S9).
 

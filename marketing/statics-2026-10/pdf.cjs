@@ -6,7 +6,10 @@ const page = await ctx.newPage();
 const names = ["S1","S2","S3","S4","S5","S6","S7","S8","I1","I2"];
 // one combined document for the PDF: each static as a page
 let html = fs.readFileSync("html/S1.html","utf8").split("<body>")[0] + "<body>";
-for (const n of names) { const body = fs.readFileSync("html/"+n+".html","utf8").split("<body>")[1].split("</body>")[0]; html += `<div style="page-break-after:always;width:1080px;height:1350px;overflow:hidden">${body}</div>`; }
+const FLAT = new Set(["I2"]); // pages whose text Canva's PDF import reflows: embed the render instead
+for (const n of names) {
+  if (FLAT.has(n)) { const b64 = fs.readFileSync("out2x/"+n+".png").toString("base64"); html += `<div style="page-break-after:always;width:1080px;height:1350px;overflow:hidden"><img src="data:image/png;base64,${b64}" style="display:block;width:1080px;height:1350px"></div>`; continue; }
+  const body = fs.readFileSync("html/"+n+".html","utf8").split("<body>")[1].split("</body>")[0]; html += `<div style="page-break-after:always;width:1080px;height:1350px;overflow:hidden">${body}</div>`; }
 html += "</body></html>";
 fs.writeFileSync("html/all.html", html.replace(/body\{margin:0;width:1080px;height:1350px;overflow:hidden;/, "body{margin:0;width:1080px;"));
 await page.goto("file://" + path.resolve("html/all.html"), { waitUntil: "load" });
