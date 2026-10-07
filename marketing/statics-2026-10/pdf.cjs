@@ -3,7 +3,7 @@ const { chromium } = require("playwright"); const fs = require("fs"); const path
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" }).catch(async () => chromium.launch());
 const ctx = await b.newContext({ viewport: { width: 1080, height: 1350 }, deviceScaleFactor: 2 });
 const page = await ctx.newPage();
-const names = ["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10"];
+const names = ["S1","S2","S3","S4","S5","S6","S7","S8","I1","I2"];
 // one combined document for the PDF: each static as a page
 let html = fs.readFileSync("html/S1.html","utf8").split("<body>")[0] + "<body>";
 for (const n of names) { const body = fs.readFileSync("html/"+n+".html","utf8").split("<body>")[1].split("</body>")[0]; html += `<div style="page-break-after:always;width:1080px;height:1350px;overflow:hidden">${body}</div>`; }
