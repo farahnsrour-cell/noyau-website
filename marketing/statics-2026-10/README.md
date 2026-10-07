@@ -15,6 +15,6 @@ Ten Instagram statics (1080 × 1350) for 8 to 28 October, built from Farah's pro
 | `final/S8` | The details · 25 Oct |
 | `final/S10` | A familiar ritual, wherever you stay · 28 Oct |
 
-`final/noyau-statics-october.pdf` holds all ten pages for a Canva import (Upload, then open the PDF as a design).
+`final/noyau-statics-october.pdf` (also `-v3.pdf`, the copy Canva imported) holds all ten pages for a Canva import (Upload, then open the PDF as a design).
 
 Rebuild: `python3 prep.py <photos dir> plates` (crops and the mirror cutout), `python3 build.py` (HTML in `html/`), `NODE_PATH=$(npm root -g) node render.cjs` (2x screenshots in `out2x/`), then downsample to 1080 × 1350.
